@@ -12,7 +12,7 @@ import (
 	"github.com/docker/docker/client"
 )
 
-type Event struct {
+type SaveEvent struct {
 	Status         string `json:"status"`
 	Error          string `json:"error"`
 	Progress       string `json:"progress"`
@@ -35,8 +35,8 @@ func Save(image string, dir string) error {
 		return (err)
 	}
 	d := json.NewDecoder(events)
-	em := make(map[string]*Event)
-	var event *Event
+	em := make(map[string]*SaveEvent)
+	var event *SaveEvent
 	lastStatus := ""
 	for {
 		if err := d.Decode(&event); err != nil {
