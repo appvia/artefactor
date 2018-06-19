@@ -1,16 +1,15 @@
 package docker
 
 import (
-	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
 const (
 	safePathSep string = "~"
 	safeVerSep  string = "~~"
-	ext         string = ".tar"
-	md5         string = ".md5"
+	Ext         string = ".docker.tar"
 )
 
 // ImageToFileName provides an archived name from a docker image name
@@ -18,28 +17,30 @@ func ImageToFilePath(imageName string, dir string) (fileName string, err error) 
 	flatImageName := strings.Replace(imageName, string(os.PathSeparator), safePathSep, -1)
 	flatImageName = strings.Replace(flatImageName, ":", safeVerSep, 1)
 	if len(dir) > 0 {
-		flatImageName = dir + string(os.PathSeparator) + flatImageName + ext
+		flatImageName = dir + string(os.PathSeparator) + flatImageName + Ext
 	} else {
-		flatImageName = flatImageName + ext
+		flatImageName = flatImageName + Ext
 	}
 	return flatImageName, nil
 }
 
 // FileNameToImageName converts an archived file name back to the origonal docker image name
-func FilePathToImageName(fileName string, dir string) (imageName string, err error) {
-
-	// Check the dir is expected
-	if !strings.HasPrefix(fileName, dir) {
-		return "", fmt.Errorf(
-			"unexpected path for file %s (must match dir %v)", fileName, dir)
+func FilePathToImageName(fileName string) (imageName string, err error) {
+	if strings.Contains(fileName, string(filepath.Separator)) {
+		imageDirName := filepath.Dir(fileName)
+		dirL := len(imageDirName)
+		if dirL > 0 {
+			// Strip off leading dir:
+			imageName = fileName[(len(imageDirName) + 1):len(fileName)]
+		}
+	} else {
+		imageName = fileName
 	}
-
-	// Strip off leading dir:
-	imageNameEnc := fileName[(len(dir) + 1):len(fileName)]
 	// Decode version seperator
-	imageName = strings.Replace(imageNameEnc, safeVerSep, ":", 1)
+	imageName = strings.Replace(imageName, safeVerSep, ":", 1)
 	// Decode registry path
-	imageName = strings.Replace(imageName, safePathSep, string(os.PathSeparator), -1) + ext
-
+	imageName = strings.Replace(imageName, safePathSep, string(os.PathSeparator), -1)
+	// Remove extension
+	imageName = strings.Replace(imageName, Ext, "", 1)
 	return imageName, nil
 }
