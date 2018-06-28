@@ -38,7 +38,7 @@ func init() {
 	restoreCmd.PersistentFlags().String(
 		FlagRestoreDestDir,
 		defaultValue(FlagRestoreDestDir, "."),
-		fmt.Sprintf("a directory to star the restore process in", FlagRestoreSourceDir))
+		fmt.Sprintf("a directory to start the restore process from (%s)", FlagRestoreSourceDir))
 
 	RootCmd.AddCommand(restoreCmd)
 }

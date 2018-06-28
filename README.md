@@ -1,10 +1,17 @@
 # Artefactor
 
-Artefactor aims to manage artefacts when they are needed using a 
-[Sneakernet](https://en.wikipedia.org/wiki/Sneakernet).
+[![Build_Status](https://circleci.com/gh/appvia/artefactor.svg?style=svg)](https://circleci.com/gh/appvia/artefactor)
 
 Artefactor's primary use case is to enable "moving" a git repository and the
- artefacts it depends on.
+ artefacts it depends on when using a 
+ [Sneakernet](https://en.wikipedia.org/wiki/Sneakernet).
+
+- [Details](#details)
+- [Usage](#usage)
+- [Build](#build)
+- [Roadmap](#roadmap)
+
+## Details
 
 E.g. a git repo for a [kubernetes](https://kubernetes.io/) deployment is 
 specified in a git repo that depends on:
@@ -72,7 +79,18 @@ artefactor restore --source-dir ~/
 `artefactor publish` takes files from the relative ./downloads path and 
 publishes containers / files to any remote registries / locations.
 
+## Build
 
+Binaries are created in `./bin/`.
+
+To install dependencies and build:
+`make`
+
+To Build with dependencies and test:
+`make test`
+
+To build quickly:
+`make build`
 
 ## Roadmap
 
