@@ -1,0 +1,33 @@
+version: 2
+jobs:
+  build:
+    docker:
+      # specify the version
+      - image: circleci/golang:1.10
+    working_directory: /go/src/github.com/appvia/artefactor
+    steps:
+      - checkout
+      - run: make test
+
+  release:
+    docker:
+      - image: circleci/golang:1.10
+    working_directory: /go/src/github.com/appvia/artefactor
+    steps:
+      - checkout
+      - run: make release
+      - run: git config --global user.name lewis-marshall
+      - run: go get github.com/tcnksm/ghr
+      - run: ghr $CIRCLE_TAG ./bin/
+
+workflows:
+  version: 2
+  run_release:
+    jobs:
+      - build
+      - release:
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
