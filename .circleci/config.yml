@@ -16,8 +16,8 @@ jobs:
     steps:
       - checkout
       - run: make release
-      - run: git config --global user.name lewis-marshall
       - run: go get github.com/tcnksm/ghr
+      - run: git config --global user.name lewismarshall
       - run: ghr $CIRCLE_TAG ./bin/
 
 workflows:
