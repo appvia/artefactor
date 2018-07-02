@@ -23,8 +23,13 @@ const (
 	FlagWebFiles = "web-files"
 	// FlagLogs enabled debug logs
 	FlagLogs = "logs"
+	// FlagTargetPlatform allows the correct version of artefactor to be saved
+	// with files.
+	FlagTargetPlatform = "target-platform"
 	// DefaultArchiveDir
 	DefaultArchiveDir = "downloads"
+	// The defualt binary type to include in downloads
+	DefaultTargetPlatform = "linux_amd64"
 )
 
 var (
