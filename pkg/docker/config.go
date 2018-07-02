@@ -9,11 +9,14 @@ import (
 	c "github.com/fsouza/go-dockerclient"
 )
 
-// GetConfig loads config for a given registry from the Docker config file
+// GetAuth loads config for a given registry from the Docker config file
 func GetAuth(image string) string {
 	registry := strings.Split(image, "/")[0]
-	auths, _ := c.NewAuthConfigurationsFromDockerCfg()
-
+	auths, err := c.NewAuthConfigurationsFromDockerCfg()
+	if err != nil {
+		log.Printf("warning (error getting authentication details: %s)", err)
+		return ""
+	}
 	for key, value := range auths.Configs {
 		log.Printf("auth key %s", key)
 		if key == registry {

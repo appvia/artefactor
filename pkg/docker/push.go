@@ -28,15 +28,13 @@ func Push(image string) error {
 	if err != nil {
 		return (err)
 	}
-	var imagePo types.ImagePushOptions
 	// Load auth details from .docker config
 	authStr := GetAuth(image)
+	var ipo types.ImagePushOptions
 	if len(authStr) > 0 {
-		imagePo = types.ImagePushOptions{RegistryAuth: authStr}
-	} else {
-		imagePo = types.ImagePushOptions{}
+		ipo.RegistryAuth = GetAuth(image)
 	}
-	events, err := cli.ImagePush(ctx, image, imagePo)
+	events, err := cli.ImagePush(ctx, image, ipo)
 	if err != nil {
 		return (err)
 	}
