@@ -49,9 +49,8 @@ func Save(
 	if !hashcache.IsCachedMatch(download, sha256) {
 		log.Printf("invalid checksum (%s) for %s, expecting %q", sha256, download, hash)
 		return errors.Errorf("invalid checksum for %s", download)
-	} else {
-		fmt.Printf("File checksum ok for %q", download)
 	}
+	fmt.Printf("File checksum ok for %q", download)
 	return nil
 }
 

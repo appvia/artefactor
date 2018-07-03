@@ -31,7 +31,7 @@ func FilePathToImageName(fileName string) (imageName string, err error) {
 		dirL := len(imageDirName)
 		if dirL > 0 {
 			// Strip off leading dir:
-			imageName = fileName[(len(imageDirName) + 1):len(fileName)]
+			imageName = fileName[(len(imageDirName) + 1):]
 		}
 	} else {
 		imageName = fileName

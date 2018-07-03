@@ -28,7 +28,7 @@ const (
 	FlagTargetPlatform = "target-platform"
 	// DefaultArchiveDir
 	DefaultArchiveDir = "downloads"
-	// The defualt binary type to include in downloads
+	// DefaultTargetPlatform is the default binary type to include in downloads
 	DefaultTargetPlatform = "linux_amd64"
 )
 

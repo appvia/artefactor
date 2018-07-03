@@ -11,6 +11,7 @@ BUILD_TIME=$(shell date -u '+%Y-%m-%d_%I:%M:%S%p')
 VERSION ?= ${GIT_VERSION}
 DEPS=$(shell go list -f '{{range .TestImports}}{{.}} {{end}}' ./...)
 PACKAGES=$(shell go list ./...)
+GOFILES_NOVENDOR=$(shell find . -type f -name '*.go' -not -path "./vendor/*")
 VERSION_PKG=$(shell go list ./pkg/version)
 LFLAGS ?= -X ${VERSION_PKG}.gitVersion=${GIT_VERSION} -X ${VERSION_PKG}.gitSha=${GIT_SHA}
 VETARGS ?= -asmdecl -atomic -bool -buildtags -copylocks -methods -nilfunc -printf -rangeloops -structtags -unsafeptr
@@ -72,11 +73,15 @@ lint:
 
 gofmt:
 	@echo "--> Running gofmt check"
-	@gofmt -s -l ./... | grep -q \.go ; if [ $$? -eq 0 ]; then \
-      echo "You need to run the make format, we have file unformatted"; \
-      gofmt -s -l *.go; \
+	@gofmt -s -l $(GOFILES_NOVENDOR) | grep -q \.go ; if [ $$? -eq 0 ]; then \
+      echo "we have unformatted files - run 'make applygofmt' to apply"; \
+			gofmt -s -d -l ${GOFILES_NOVENDOR}; \
       exit 1; \
     fi
+
+applygofmt:
+	@echo "--> Running gofmt apply"
+	@gofmt -s -l -w $(GOFILES_NOVENDOR)
 
 bench:
 	@echo "--> Running go bench"
@@ -91,14 +96,19 @@ cover:
 	@echo "--> Running go cover"
 	@go test -cover $(PACKAGES)
 
-test: deps
+test:
 	@echo "--> Running the tests"
 	  @if [ ! -d "vendor" ]; then \
     make dep-install; \
   fi
 	@go test -v ${PACKAGES}
-	@$(MAKE) vet
 	@$(MAKE) cover
+
+src:
+	@echo "--> Running the src checks"
+	@$(MAKE) vet
+	@$(MAKE) lint
+	@$(MAKE) gofmt
 
 changelog: release
 	git log $(shell git tag | tail -n1)..HEAD --no-merges --format=%B > changelog

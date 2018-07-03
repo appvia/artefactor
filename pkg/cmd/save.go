@@ -116,7 +116,7 @@ func save(c *cobra.Command) error {
 }
 
 // saveMe saves a copy of the target binary in the save dir
-func saveMe(saveDir string, platform string) error {
+func saveMe(saveDir, platform string) error {
 	binaryDst := filepath.Join(saveDir, ArtefactorBinaryName)
 	// detect if the binary we are saving with matches target platform...
 	if fmt.Sprintf("%s_%s", runtime.GOOS, runtime.GOARCH) == platform {
