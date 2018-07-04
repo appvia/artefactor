@@ -26,16 +26,8 @@ func ImageToFilePath(imageName string, dir string) (fileName string, err error) 
 
 // FileNameToImageName converts an archived file name back to the origonal docker image name
 func FilePathToImageName(fileName string) (imageName string, err error) {
-	if strings.Contains(fileName, string(filepath.Separator)) {
-		imageDirName := filepath.Dir(fileName)
-		dirL := len(imageDirName)
-		if dirL > 0 {
-			// Strip off leading dir:
-			imageName = fileName[(len(imageDirName) + 1):]
-		}
-	} else {
-		imageName = fileName
-	}
+	// obtain the image name portion of the path
+	imageName = filepath.Base(fileName)
 	// Decode version seperator
 	imageName = strings.Replace(imageName, safeVerSep, ":", 1)
 	// Decode registry path
