@@ -31,11 +31,8 @@ func Save(image string, dir string) error {
 		return (err)
 	}
 	// Load auth details from .docker config
-	authStr := GetAuth(image)
 	var ipo types.ImagePullOptions
-	if len(authStr) > 0 {
-		ipo.RegistryAuth = GetAuth(image)
-	}
+	ipo.RegistryAuth = GetAuth(image)
 	events, err := cli.ImagePull(ctx, image, ipo)
 	if err != nil {
 		return (err)
