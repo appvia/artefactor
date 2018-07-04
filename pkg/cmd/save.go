@@ -5,12 +5,14 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/appvia/artefactor/pkg/docker"
 	"github.com/appvia/artefactor/pkg/git"
 	"github.com/appvia/artefactor/pkg/hashcache"
 	"github.com/appvia/artefactor/pkg/util"
+	"github.com/appvia/artefactor/pkg/version"
 	"github.com/appvia/artefactor/pkg/web"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -18,8 +20,10 @@ import (
 
 // SaveCommand is the sub command syntax
 const (
-	SaveCommand     string = "save"
-	SaveDirMetaFile string = "saveDir.meta"
+	SaveCommand           string = "save"
+	SaveDirMetaFile       string = "saveDir.meta"
+	ArtefactorBinaryName  string = "artefactor"
+	ArtefactorPublishRoot string = "https://github.com/appvia/artefactor/releases/download/%s/"
 )
 
 // saveCmd represents the version command
@@ -39,6 +43,12 @@ func init() {
 		DefaultArchiveDir,
 		"a location to save artefacts to and publish from")
 
+	addFlagWithEnvDefault(
+		saveCmd,
+		FlagTargetPlatform,
+		DefaultTargetPlatform,
+		"the target platform in format [platform]_[arch]")
+
 	RootCmd.AddCommand(saveCmd)
 }
 
@@ -52,7 +62,6 @@ func save(c *cobra.Command) error {
 			saveDir,
 			err)
 	}
-
 	// First save docker images
 	images := strings.Fields(c.Flag(FlagDockerImages).Value.String())
 	for _, image := range images {
@@ -101,15 +110,86 @@ func save(c *cobra.Command) error {
 		}
 	}
 
-	// lastly save this binary...
-	me, _ := os.Executable()
-	if err := copyBin(me, saveDir); err != nil {
-		return fmt.Errorf(
-			"problem trying to save %s as %s/%s:%s",
-			me,
-			saveDir,
-			me,
-			err)
+	// Save the binary for the target platform
+	platform := c.Flag(FlagTargetPlatform).Value.String()
+	return saveMe(saveDir, platform)
+}
+
+// saveMe saves a copy of the target binary in the save dir
+func saveMe(saveDir, platform string) error {
+	binaryDst := filepath.Join(saveDir, ArtefactorBinaryName)
+	// detect if the binary we are saving with matches target platform...
+	if fmt.Sprintf("%s_%s", runtime.GOOS, runtime.GOARCH) == platform {
+		me, _ := os.Executable()
+		if err := copyBin(me, saveDir); err != nil {
+			return fmt.Errorf(
+				"problem trying to save %s as %s:%s",
+				me,
+				binaryDst,
+				err)
+		}
+	} else {
+		platformBin := ArtefactorBinaryName + "_" + platform
+		// We need to download the correct binary
+		// TODO: maybe implement a local download cache in users home (with cleanup?)
+		url := fmt.Sprintf(ArtefactorPublishRoot, version.Get().Version) +
+			"/" + platformBin
+		checkSumsUrl := fmt.Sprintf(ArtefactorPublishRoot, version.Get().Version) +
+			"/" + hashcache.CheckSumFileName
+
+		tmpDir, err := ioutil.TempDir("", "artefactor_downloads")
+		if err != nil {
+			fmt.Sprintf("problem creating temp dir for artefactor downloads")
+		}
+
+		defer os.RemoveAll(tmpDir) // clean up
+
+		// download checksums file:
+		checkSumFile := filepath.Join(tmpDir, hashcache.CheckSumFileName)
+		if err := web.SaveNoCheck(checkSumsUrl, checkSumFile, false); err != nil {
+			return fmt.Errorf(
+				"problem trying to download artefactor checksums from %s",
+				checkSumsUrl)
+		}
+		tmpBinPath := filepath.Join(tmpDir, platformBin)
+		if err := web.SaveNoCheck(url, tmpBinPath, true); err != nil {
+			return fmt.Errorf("problem trying to download artefactor from %s", url)
+		}
+		// Verify the download:
+		binChksum, err := hashcache.GetCachedChecksum(tmpBinPath)
+		if err != nil {
+			return fmt.Errorf(
+				"problem getting checksum for from %s:%s",
+				tmpBinPath,
+				err)
+		}
+		if calcBinChkSum, err := hashcache.CalcChecksum(tmpBinPath); err != nil {
+			if calcBinChkSum != binChksum {
+				return fmt.Errorf(
+					"download %s had unexpected checksum %s, expecting %s (from %s)",
+					url,
+					calcBinChkSum,
+					binChksum,
+					checkSumsUrl)
+			}
+		}
+
+		// Finaly move the file to the correct download path:
+		if err := util.Mv(tmpBinPath, binaryDst); err != nil {
+			return fmt.Errorf(
+				"unable to move from %s to %s:%s",
+				tmpBinPath,
+				binaryDst,
+				err)
+		}
+
+		if _, err := hashcache.UpdateCache(binaryDst); err != nil {
+			return fmt.Errorf("unable to update hash for %s:%s", binaryDst, err)
+		}
+		if err := util.BinMark(binaryDst); err != nil {
+			return fmt.Errorf(
+				"problem creating meta data file for %s:%s", binaryDst, err)
+		}
 	}
 	return nil
 }

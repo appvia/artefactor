@@ -37,6 +37,29 @@ func Save(
 		} // else not cached...
 	}
 
+	if err := SaveNoCheck(url, download, binFile); err != nil {
+		fmt.Printf("download problem:%s", err)
+	}
+
+	// Now the file is updated - update the checksum...
+	hash, err := hashcache.UpdateCache(download)
+	if err != nil {
+		return err
+	}
+	if !hashcache.IsCachedMatch(download, sha256) {
+		log.Printf("invalid checksum (%s) for %s, expecting %q", sha256, download, hash)
+		return errors.Errorf("invalid checksum for %s", download)
+	}
+	fmt.Printf("File checksum ok for %q", download)
+	return nil
+}
+
+// SaveNoCheck will download a file without verifying checksums
+func SaveNoCheck(
+	url string,
+	download string,
+	binFile bool,
+) error {
 	client := grab.NewClient()
 	req, _ := grab.NewRequest(download, url)
 
@@ -74,17 +97,8 @@ Loop:
 			return errors.Errorf("can't set executable permissions")
 		}
 	}
-	// Now the file is updated - update the checksum...
-	hash, err := hashcache.UpdateCache(download)
-	if err != nil {
-		return err
-	}
-	if !hashcache.IsCachedMatch(download, sha256) {
-		log.Printf("invalid checksum (%s) for %s, expecting %q", sha256, download, hash)
-		return errors.Errorf("invalid checksum for %s", download)
-	} else {
-		fmt.Printf("File checksum ok for %q", download)
-	}
+
+	// Set file mode if it's a binary
 	if binFile {
 		if err := util.BinMark(download); err != nil {
 			return err
