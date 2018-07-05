@@ -51,7 +51,7 @@ func Save(image string, dir string) error {
 		}
 		em[event.Status] = event
 		if event.Status != lastStatus {
-			fmt.Printf("%+v\n", event.Status)
+			fmt.Printf("%+v (%s)\n", event.Status, event.Id)
 		}
 		lastStatus = event.Status
 	}
