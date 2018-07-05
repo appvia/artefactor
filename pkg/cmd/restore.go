@@ -34,11 +34,15 @@ func init() {
 	restoreCmd.PersistentFlags().String(
 		FlagRestoreSourceDir,
 		defaultValue(FlagRestoreSourceDir, "."),
-		fmt.Sprintf("a directory with all artefacts (${%s})", FlagRestoreSourceDir))
+		fmt.Sprintf(
+			"a directory with all artefacts (${%s})",
+			GetEnvName(FlagRestoreSourceDir)))
 	restoreCmd.PersistentFlags().String(
 		FlagRestoreDestDir,
 		defaultValue(FlagRestoreDestDir, "."),
-		fmt.Sprintf("a directory to start the restore process from (%s)", FlagRestoreSourceDir))
+		fmt.Sprintf(
+			"a directory to start the restore process from (${%s})",
+			GetEnvName(FlagRestoreDestDir)))
 
 	RootCmd.AddCommand(restoreCmd)
 }
