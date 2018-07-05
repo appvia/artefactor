@@ -46,6 +46,15 @@
   version = "v17.03.2-ce-rc1"
 
 [[projects]]
+  name = "github.com/docker/docker-credential-helpers"
+  packages = [
+    "client",
+    "credentials"
+  ]
+  revision = "5241b46610f2491efdf9d1c85f1ddf5b02f6d962"
+  version = "v0.6.1"
+
+[[projects]]
   name = "github.com/docker/go-connections"
   packages = [
     "nat",
@@ -291,6 +300,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "8d6117ec239dac660782333fef501ad67eb5d4c03356d9c307b51594dcc8a416"
+  inputs-digest = "a3c532c2398c9743ad559ebd151d662ba81e48ad01d50f4059e2b854e461d10d"
   solver-name = "gps-cdcl"
   solver-version = 1

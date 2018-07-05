@@ -135,7 +135,7 @@ func saveMe(saveDir, platform string) error {
 		url := fmt.Sprintf(ArtefactorPublishRoot, version.Get().Version) +
 			"/" + platformBin
 		checkSumsUrl := fmt.Sprintf(ArtefactorPublishRoot, version.Get().Version) +
-			"/" + hashcache.CheckSumFileName
+			"/" + hashcache.DefaultCheckSumFileName
 
 		tmpDir, err := ioutil.TempDir("", "artefactor_downloads")
 		if err != nil {
@@ -145,7 +145,7 @@ func saveMe(saveDir, platform string) error {
 		defer os.RemoveAll(tmpDir) // clean up
 
 		// download checksums file:
-		checkSumFile := filepath.Join(tmpDir, hashcache.CheckSumFileName)
+		checkSumFile := filepath.Join(tmpDir, hashcache.DefaultCheckSumFileName)
 		if err := web.SaveNoCheck(checkSumsUrl, checkSumFile, false); err != nil {
 			return fmt.Errorf(
 				"problem trying to download artefactor checksums from %s",
