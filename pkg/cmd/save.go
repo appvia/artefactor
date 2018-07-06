@@ -56,27 +56,55 @@ func save(c *cobra.Command) error {
 	common(c)
 	// Record where the archives should be stored
 	saveDir := c.Flag(FlagArchiveDir).Value.String()
+
+	type webfile struct {
+		url      string
+		fileName string
+		sha      string
+		bin      bool
+	}
+
+	// Pre-flight checks:
+	webFiles := []webfile{}
+	for _, webFile := range strings.Fields(c.Flag(FlagWebFiles).Value.String()) {
+		parts := strings.Split(webFile, ",")
+		if len(parts) < 3 {
+			return errors.Errorf("expecting a web file CSV with url,filename,sha256[,true|false]")
+		}
+		binFile := false
+		if len(parts) == 4 {
+			if strings.ToLower(parts[3]) == "true" {
+				binFile = true
+			}
+		}
+		w := webfile{
+			url:      parts[0],
+			fileName: parts[1],
+			sha:      parts[2],
+			bin:      binFile,
+		}
+		webFiles = append(webFiles, w)
+	}
+
+	// Now make changes
+	fmt.Println("Saving meta-data and me")
 	if err := saveSavedPath(saveDir); err != nil {
 		return fmt.Errorf(
 			"problem saving meta data file to record archive path %s:%s",
 			saveDir,
 			err)
 	}
-	// First save docker images
-	images := strings.Fields(c.Flag(FlagDockerImages).Value.String())
-	for _, image := range images {
-		if err := docker.Save(image, saveDir); err != nil {
-			return fmt.Errorf(
-				"problem saving docker image %s to directory %s:%s",
-				image,
-				saveDir,
-				err)
-		}
+
+	// Save the binary for the target platform
+	platform := c.Flag(FlagTargetPlatform).Value.String()
+	if err := saveMe(saveDir, platform); err != nil {
+		return err
 	}
 
-	// Next save any git repos
+	// save any git repos
 	gitRepos := strings.Fields(c.Flag(FlagGitRepos).Value.String())
 	for _, repo := range gitRepos {
+		fmt.Printf("\nSaving git repos\n")
 		if err := git.Archive(repo, saveDir); err != nil {
 			return fmt.Errorf(
 				"problem saving git repository %s to directory %s:%s",
@@ -86,33 +114,33 @@ func save(c *cobra.Command) error {
 		}
 	}
 
-	// Now save Web files
-	webFiles := strings.Fields(c.Flag(FlagWebFiles).Value.String())
-	for _, webFile := range webFiles {
-		parts := strings.Split(webFile, ",")
-		if len(parts) < 3 {
-			return errors.Errorf("expecting a web file CSV with url,filename,sha256[,true|false]")
-		}
-		url := parts[0]
-		fileName := parts[1]
-		sha256 := parts[2]
-		binFile := false
-		if len(parts) == 4 {
-			binFile = true
-		}
-		if err := web.Save(url, fileName, saveDir, sha256, binFile); err != nil {
+	// save docker images
+	images := strings.Fields(c.Flag(FlagDockerImages).Value.String())
+	for _, image := range images {
+		fmt.Printf("\nSaving docker images\n")
+		if err := docker.Save(image, saveDir); err != nil {
 			return fmt.Errorf(
-				"problem saving url:%s to filename %s/%s:%s",
-				url,
+				"problem saving docker image %s to directory %s:%s",
+				image,
 				saveDir,
-				fileName,
 				err)
 		}
 	}
 
-	// Save the binary for the target platform
-	platform := c.Flag(FlagTargetPlatform).Value.String()
-	return saveMe(saveDir, platform)
+	// Now save Web files
+	for _, webFile := range webFiles {
+		fmt.Printf("\nSaving web files\n")
+		if err := web.Save(webFile.url, webFile.fileName, saveDir, webFile.sha, webFile.bin); err != nil {
+			return fmt.Errorf(
+				"problem saving url:%s to filename %s/%s:%s",
+				webFile.url,
+				saveDir,
+				webFile.fileName,
+				err)
+		}
+	}
+	fmt.Printf("all artefacts correct and present\n")
+	return nil
 }
 
 // saveMe saves a copy of the target binary in the save dir
