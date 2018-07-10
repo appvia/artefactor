@@ -89,17 +89,73 @@ func RestoreHome(gitRepoFile string, dst string, savedDir string) error {
 	src := filepath.Dir(gitRepoFile)
 	// Get the git repo name from the file name...
 	repoName := strings.TrimSuffix(filepath.Base(gitRepoFile), git.GitFileHomeExt)
-	fmt.Printf("Restoring git files from %s to %s\n", src, dst)
-	if err := git.Restore(gitRepoFile, dst, repoName); err != nil {
-		return err
-	}
 
 	// Get the list of files from the checksum file (hashcache) in the source
 	// directory.
 	dstDir := filepath.Join(dst, repoName, savedDir)
-	files := hashcache.GetFiles(src)
-	// Create directory structure
-	if _, err := os.Stat(dstDir); err != nil {
+	refresh := false
+	if _, err := os.Stat(dstDir); err == nil {
+		refresh = true
+	}
+
+	var missingFiles []string
+	// Verify if we have everything we need BEFORE moving files
+	// Check we have all files in source OR destination BEFORE we start to copy...
+	srcChk, err := hashcache.NewFromDir(src)
+	if err != nil {
+		return fmt.Errorf("problem with checksum file in folder %s:%s", src, err)
+	}
+	log.Printf("items in cache %v", len(srcChk.CheckSumsByFilePath))
+	for _, item := range srcChk.CheckSumsByFilePath {
+		// Only worry if the file refered from the checksum file doesn't exist
+		if _, err := os.Stat(item.FilePath); err == nil {
+			log.Printf("file present in cache and disk %s", item.FilePath)
+		} else {
+			log.Printf("file present in cache and missing on disk %s", item.FilePath)
+			// if refreshing then check if file exists in destination...
+			if !refresh {
+				// Not refreshing files so all files have to be present!
+				log.Printf("not refreshing files so file is missing %s", item.FilePath)
+				missingFiles = append(missingFiles, item.FilePath)
+			} else {
+				// Refreshing only some files so check if file in destination already...
+				dstFile := filepath.Join(dstDir, item.FileName)
+				if _, err := os.Stat(dstFile); err != nil {
+					// File not in source or destination!
+					missingFiles = append(missingFiles, item.FilePath)
+					log.Printf("refreshing, and file missing from destination %s", dstFile)
+				} else {
+					// File only in destination so we need to check it's the right one:
+					fmt.Printf(
+						"Checking existing file (no update provided) %s\n",
+						dstFile)
+					calcAndCheckSum(dstFile)
+				}
+			}
+		}
+	}
+	if len(missingFiles) > 0 {
+		fmt.Printf("Missing files:\n")
+		for _, file := range missingFiles {
+			fmt.Printf("  %s\n", file)
+		}
+		return fmt.Errorf(
+			"files in checksum file %s not present in source %s or destination %s\n",
+			srcChk.CheckSumFile,
+			src,
+			dstDir)
+	}
+
+	// Pre-flight checks OK...
+	fmt.Printf(
+		"Restoring git files from %s to %s\n",
+		gitRepoFile,
+		filepath.Join(dst, repoName))
+	if err := git.Restore(gitRepoFile, dst, repoName); err != nil {
+		return err
+	}
+
+	if !refresh {
 		if err := os.MkdirAll(dstDir, 0755); err != nil {
 			return fmt.Errorf(
 				"problem creating destination directory structure %s:%s",
@@ -108,53 +164,66 @@ func RestoreHome(gitRepoFile string, dst string, savedDir string) error {
 		}
 	}
 	// Ensure we have a checksum file in the destination first...
-	srcChecksum := filepath.Join(src, hashcache.CheckSumFileName)
-	if err := util.Cp(
-		srcChecksum,
-		filepath.Join(dstDir, hashcache.CheckSumFileName)); err != nil {
+	if err != nil {
+		return fmt.Errorf("cannot read checksum file from %s:%s", dstDir, err)
+	}
+	// Now move all the files, checking checksums as we go...
+	for srcFile, chkItem := range srcChk.CheckSumsByFilePath {
+		dstFile := filepath.Join(dstDir, chkItem.FileName)
+
+		// Support incremental copies (error if destination not already present)
+		if _, err := os.Stat(srcFile); err == nil {
+			fmt.Printf("Moving file %q to %q\n", srcFile, dstDir)
+			if err := util.Mv(srcFile, dstFile); err != nil {
+				return err
+			}
+			calcAndCheckSum(dstFile)
+		}
+	}
+	dstChkFile := filepath.Join(dstDir, hashcache.DefaultCheckSumFileName)
+	// Finally move the checksums file...
+	if err := util.Mv(
+		srcChk.CheckSumFile,
+		dstChkFile); err != nil {
 		return fmt.Errorf(
-			"cannot copy checksum file (%s) from:%s to %s:%s",
-			hashcache.CheckSumFileName,
+			"cannot move checksum file (%s) from:%s to %s:%s",
+			srcChk.CheckSumFile,
 			src,
 			dstDir,
 			err)
 	}
+	fmt.Printf("All artefacts restored and checked\n")
+	return nil
+}
 
-	for _, file := range files {
-		srcFile := filepath.Join(src, file)
-		dstFile := filepath.Join(dstDir, file)
-
-		// Support incremental copies (error if destination not already present)
-		if _, err := os.Stat(srcFile); err == nil {
-			fmt.Printf("Moving file %q to %q\n", file, dstDir)
-			if err := util.Mv(srcFile, dstFile); err != nil {
-				return err
-			}
-		}
-		if _, err := os.Stat(dstFile); os.IsNotExist(err) {
-			// File doesn't exist so incremental copy failed!
-			fmt.Printf(
-				"File missing from src and destination (%s), please provide",
-				file)
-		}
-		fmt.Printf("  Checksum:")
-		calcHash, err := hashcache.CalcChecksum(dstFile)
-		if err != nil {
-			return err
-		}
-		log.Printf(calcHash)
-		if hashcache.IsCachedMatch(dstFile, calcHash) {
-			fmt.Printf("OK\n")
-		} else {
-			expectedHash, _ := hashcache.GetCachedChecksum(dstFile)
+// calcAndCheckSum will display the results of verifying a checksum
+func calcAndCheckSum(file string) error {
+	file = filepath.Clean(file)
+	fmt.Printf("  Checksum:")
+	calcHash, err := hashcache.CalcChecksum(file)
+	if err != nil {
+		return err
+	}
+	// Get a reference to a checksum file but don't create the entry
+	dstChk, err := hashcache.NewFromExistingFile(file, false)
+	if err != nil {
+		return err
+	}
+	log.Printf(calcHash)
+	if dstChk.IsCachedMatched(file, calcHash) {
+		fmt.Printf("OK\n")
+	} else {
+		expectedHash, ok := dstChk.CheckSumsByFilePath[file]
+		if !ok {
 			return fmt.Errorf(
-				" failed for %s, expecting %s but got %s\n",
-				dstFile,
+				"missing checksum for %s from %s", file, dstChk.CheckSumFile)
+		} else {
+			return fmt.Errorf(
+				"failed for %s, expecting %s but got %s\n",
+				file,
 				expectedHash,
 				calcHash)
 		}
 	}
-	os.Remove(srcChecksum)
-	fmt.Printf("All artefacts restored and checked\n")
 	return nil
 }

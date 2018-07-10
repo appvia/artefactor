@@ -22,7 +22,9 @@ var (
 
 func TestIsCached(t *testing.T) {
 	for _, sha := range shass {
-		if IsCached(sha.file) != sha.cached {
+		// new checksum struct and don't create checksum for item
+		c, _ := NewFromExistingFile(sha.file, false)
+		if c.IsCached(sha.file) != sha.cached {
 			t.Errorf("Expecting %v but got %v for entry %q", sha.cached, !sha.cached, sha.file)
 		}
 	}
@@ -30,7 +32,9 @@ func TestIsCached(t *testing.T) {
 
 func TestIsCachedMatched(t *testing.T) {
 	for _, sha := range shass {
-		if IsCachedMatch(sha.file, sha.sha) != sha.goodSha {
+		// new checksum struct and don't create checksum for item
+		c, _ := NewFromExistingFile(sha.file, false)
+		if c.IsCachedMatched(sha.file, sha.sha) != sha.goodSha {
 			t.Errorf("Expecting %v but got %v for entry %q", sha.goodSha, !sha.goodSha, sha.file)
 		}
 	}

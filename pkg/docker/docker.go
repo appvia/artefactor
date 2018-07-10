@@ -73,7 +73,7 @@ func GetImages(path string, registry string) ([]Image, error) {
 				return nil, err
 			}
 			images = append(images, Image{
-				FileName:     filepath.Join(path, file),
+				FileName:     file,
 				ImageName:    imageName,
 				NewImageName: getNewImageName(imageName, registry),
 			})

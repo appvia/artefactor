@@ -22,14 +22,18 @@ func Save(
 
 	download := fmt.Sprintf("%s/%s", dir, fileName)
 	// Check checksum cache first...
-	if hashcache.IsCachedMatch(download, sha256) {
+	c, err := hashcache.NewFromExistingFile(download, false)
+	if err != nil {
+		return fmt.Errorf("problem getting cache from file:%s", err)
+	}
+	if c.IsCachedMatched(download, sha256) {
 		fmt.Printf("file %q in cache and matching checksum %s\n", download, sha256)
 		if binFile {
 			util.BinMark(download)
 		}
 		return nil
 	} else {
-		if hashcache.IsCached(download) {
+		if c.IsCached(download) {
 			fmt.Printf("file %q is in cache but does NOT match checksum %s", download, sha256)
 			// need to delete file for now and manage partial recovery logic in lib...
 			fmt.Printf("deleting file %q", download)
@@ -42,15 +46,15 @@ func Save(
 	}
 
 	// Now the file is updated - update the checksum...
-	hash, err := hashcache.UpdateCache(download)
+	hash, err := c.Update(download)
 	if err != nil {
 		return err
 	}
-	if !hashcache.IsCachedMatch(download, sha256) {
+	if !c.IsCachedMatched(download, sha256) {
 		log.Printf("invalid checksum (%s) for %s, expecting %q", sha256, download, hash)
 		return errors.Errorf("invalid checksum for %s", download)
 	}
-	fmt.Printf("File checksum ok for %q", download)
+	fmt.Printf("File checksum ok for %q\n", download)
 	return nil
 }
 
