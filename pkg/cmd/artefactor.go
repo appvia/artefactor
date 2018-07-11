@@ -26,6 +26,9 @@ const (
 	// FlagTargetPlatform allows the correct version of artefactor to be saved
 	// with files.
 	FlagTargetPlatform = "target-platform"
+	// FlagImageVars is used to specify a whitelist of variable names to enable
+	// "export"
+	FlagImageVars = "image-vars"
 	// DefaultArchiveDir
 	DefaultArchiveDir = "downloads"
 	// DefaultTargetPlatform is the default binary type to include in downloads
