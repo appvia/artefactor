@@ -39,9 +39,10 @@ Artefacts can be specified as flags or as environment variables with the followi
 
 | flag      | format | description | example |
 |-----------|--------|-------------|---------|
-| git-repos | [.] [local path] | Will archive a git repository. If the directory is the same as ${PWD}, it signifies the "home" for restoring. | `.` |
-| docker-images | docker-image docker-image | A whitespace delimeted set of docker images | `mysql alpine` |
-| web-files | url,filename,sha256[,true/false] | A whitespace seperated list of CSV's in the following format: </br></br>`url` is where to download from</br></br> `filename` is the name to save locally</br></br> `sha256` is the expected checksum</br></br>The optional last parameter specifies if the file should have executable permissions | `https://bit.ly/2ySXztI,kd,2f7...,true https://bit.ly/abc.iso,my.iso,abc...` |
+| `--git-repos` | [.] [local path] | Will archive a git repository. If the directory is the same as ${PWD}, it signifies the "home" for restoring. | `.` |
+| `--docker-images` | docker-image docker-image | A white-space delimited set of docker images | `mysql alpine` |
+| `--image-vars` | `"MYSQL_IMAGE ANOTHER_IMAGE"` | A white-space delimited set of image variable names | Given:</br>`export MYSQL_IMAGE=mysql:v5.0`</br>`export ALPINE_IMAGE=alpine` </br> Use: </br>`"MYSQL_IMAGE ALPINE_IMAGE"`|
+| `--web-files` | url,filename,sha256[,true/false] | A white-space separated list of CSV's in the following format: </br></br>`url` is where to download from</br></br> `filename` is the name to save locally</br></br> `sha256` is the expected checksum</br></br>The optional last parameter specifies if the file should have executable permissions | `https://bit.ly/2ySXztI,kd,2f7...,true https://bit.ly/abc.iso,my.iso,abc...` |
 
 
 *Common Flags:*
@@ -56,6 +57,20 @@ artefactor save --git-repos=.\
 export ARTEFACTOR_DOCKER_IMAGES="mysql
                                  alpine:latest"
 export ARTEFACTOR_WEB_FILES="https://github.com/UKHomeOffice/kd/releases/download/v0.13.0/kd_linux_amd64,kd,2f729bb26e225bcf61aa62a03d210f9a238d1c7b1666c1d72964decf7120466a,true"
+
+artefactor save
+```
+
+*Environment Image Lists:*
+
+It is useful to be able to specify a list of variables used for
+images. In this case, the flag `--image-vars`
+(`ARTEFACTOR_IMAGE_VARS`) can be specified directly.
+```
+MYSQL_IMAGE=mysql:v5.0
+CASSANDRA_IMAGE=docker.io/cassandra:latest
+ARTEFACTOR_IMAGE_VARS="MYSQL_IMAGE CASSANDRA_IMAGE"
+ARTEFACTOR_PRIVATE_REGISTRY=myreg.local
 
 artefactor save
 ```
@@ -78,6 +93,38 @@ artefactor restore --source-dir ~/
 
 `artefactor publish` takes files from the relative ./downloads path and 
 publishes containers / files to any remote registries / locations.
+
+### update-image-vars
+
+Artefactor can update environment variables with a list of transformed image
+names. This is useful when environment variables with image names are used in
+deployments and they need to be managed with a private registry name.
+
+Given the following exported shell variables:
+```bash
+export MYSQL_IMAGE=mysql:v5.0
+export CASSANDRA_IMAGE=docker.io/cassandra:latest
+export ARTEFACTOR_IMAGE_VARS="MYSQL_IMAGE CASSANDRA_IMAGE"
+export ARTEFACTOR_PRIVATE_REGISTRY=myreg.local
+```
+
+To safely update environment variables with a list of images (as discovered from the
+ downloaded artefacts):
+```
+set -e
+exports=$(artefactor update-image-vars)
+eval "echo ${exports}"
+```
+
+The sub command will produce the output:
+```bash
+export MYSQL_IMAGE=myreg.local/mysql:v5.0
+export CASSANDRA_IMAGE=myreg.local/cassandra:latest
+```
+
+**Note**: only images known to artefactor (from the downloads meta-data) and
+ variable names white-listed using `ARTEFACTOR_IMAGE_VARS` or the flag
+`--image-vars` will "be exported".
 
 ## Build
 

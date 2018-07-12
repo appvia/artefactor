@@ -49,6 +49,12 @@ func init() {
 		DefaultTargetPlatform,
 		"the target platform in format [platform]_[arch]")
 
+	addFlagWithEnvDefault(
+		saveCmd,
+		FlagImageVars,
+		"",
+		"the whitelist separated list of variables specifying orininal image names")
+
 	RootCmd.AddCommand(saveCmd)
 }
 
@@ -115,7 +121,7 @@ func save(c *cobra.Command) error {
 	}
 
 	// save docker images
-	images := strings.Fields(c.Flag(FlagDockerImages).Value.String())
+	images := getImages(c)
 	for _, image := range images {
 		fmt.Printf("\nSaving docker images\n")
 		if err := docker.Save(image, saveDir); err != nil {
@@ -141,6 +147,28 @@ func save(c *cobra.Command) error {
 	}
 	fmt.Printf("all artefacts correct and present\n")
 	return nil
+}
+
+// getImages gets the images from either docker-images or image-vars
+func getImages(c *cobra.Command) []string {
+	images := strings.Fields(c.Flag(FlagDockerImages).Value.String())
+	imageVars := strings.Fields(c.Flag(FlagImageVars).Value.String())
+	for _, varName := range imageVars {
+		newImage := os.Getenv(varName)
+		if !contains(images, newImage) {
+			images = append(images, newImage)
+		}
+	}
+	return images
+}
+
+func contains(ary []string, item string) bool {
+	for _, s := range ary {
+		if s == item {
+			return true
+		}
+	}
+	return false
 }
 
 // saveMe saves a copy of the target binary in the save dir
