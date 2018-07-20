@@ -93,6 +93,16 @@ func save(c *cobra.Command) error {
 	}
 
 	// Now make changes
+	if _, err := os.Stat(saveDir); os.IsNotExist(err) {
+		// Create the downloads folder
+		if err := os.MkdirAll(saveDir, 0744); err != nil {
+			return fmt.Errorf(
+				"problem creating save dir %s:%s",
+				saveDir,
+				err)
+		}
+	}
+
 	fmt.Println("Saving meta-data and me")
 	if err := saveSavedPath(saveDir); err != nil {
 		return fmt.Errorf(
