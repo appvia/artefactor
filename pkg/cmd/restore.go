@@ -67,7 +67,7 @@ func restore(c *cobra.Command) error {
 	if homeRepo == "" {
 		log.Printf("no git home repo archive found in %s", src)
 	} else {
-		restorePath, err := getSavedPath(dst, src)
+		restorePath, err := getRelativeSavedPath(src)
 		if err != nil {
 			return fmt.Errorf(
 				"problem retrieveing meta data for archive directory from %s:%s",
@@ -92,8 +92,10 @@ func RestoreHome(gitRepoFile string, dst string, savedDir string) error {
 
 	// Get the list of files from the checksum file (hashcache) in the source
 	// directory.
-	dstDir := filepath.Join(dst, repoName, savedDir)
+	dstDir := filepath.Join(
+		filepath.Clean(dst), repoName, filepath.Clean(savedDir))
 	refresh := false
+	log.Printf("dst:%s\nRepo:%s\nSavedDir:%s\n==>%s", dst, repoName, savedDir, dstDir)
 	if _, err := os.Stat(dstDir); err == nil {
 		refresh = true
 	}
