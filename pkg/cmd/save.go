@@ -291,11 +291,10 @@ func saveSavedPath(saveDir string) error {
 }
 
 // getSavedPath will retireve the saved path from the meta-data file.
-func getSavedPath(dstDir, srcDir string) (string, error) {
+func getRelativeSavedPath(srcDir string) (string, error) {
 	b, err := ioutil.ReadFile(filepath.Join(srcDir, SaveDirMetaFile))
 	if err != nil {
 		return "", err
 	}
-	saveDir := filepath.Join(dstDir, string(b))
-	return saveDir, nil
+	return string(b), nil
 }
