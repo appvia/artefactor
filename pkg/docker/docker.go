@@ -75,14 +75,14 @@ func GetImages(path string, registry string) ([]Image, error) {
 			images = append(images, Image{
 				FileName:     file,
 				ImageName:    imageName,
-				NewImageName: getNewImageName(imageName, registry),
+				NewImageName: GetNewImageName(imageName, registry),
 			})
 		}
 	}
 	return images, nil
 }
 
-func getNewImageName(image string, registry string) string {
+func GetNewImageName(image string, registry string) string {
 	newImage := fmt.Sprintf("%s/%s", registry, filepath.Base(image))
 	return newImage
 }

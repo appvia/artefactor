@@ -55,29 +55,16 @@ func imageNames(c *cobra.Command) error {
 	}
 	// get the registry (if specified)
 	registry := c.Flag(FlagDockerRegistry).Value.String()
-	images, err := docker.GetImages(src, registry)
-	if err != nil {
-		return fmt.Errorf(
-			"problem getting a list of images from file names in %s:%s", src, err)
-	}
-	if len(images) < 1 {
-		return fmt.Errorf(
-			"No docker image artefacts found, use `save` first or specify flag %s",
-			FlagArchiveDir)
-	}
 	// Complain if no registry is specified
 	if len(registry) < 1 {
 		return fmt.Errorf("must specify registry for %s", ImageNamesCommand)
 	}
 	imageVars := strings.Fields(c.Flag(FlagImageVars).Value.String())
 	log.Printf("image vars:%v", imageVars)
-	for _, image := range images {
-		for _, imageVar := range imageVars {
-			log.Printf("%s == %s", image.ImageName, os.Getenv(imageVar))
-			if image.ImageName == os.Getenv(imageVar) {
-				fmt.Printf("export %s=%s\n", imageVar, image.NewImageName)
-			}
-		}
+	for _, imageVar := range imageVars {
+		image := os.Getenv(imageVar)
+		newImageName := docker.GetNewImageName(image, registry)
+		fmt.Printf("export %s=%s\n", imageVar, newImageName)
 	}
 	return nil
 }
