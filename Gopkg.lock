@@ -2,7 +2,7 @@
 
 
 [[projects]]
-  digest = "1:05c1f0aa5c5e42e1b85cbe1a9c9c74adfd1e5d0c1b839b2924371aed51e9eb64"
+  digest = "1:bf42be3cb1519bf8018dfd99720b1005ee028d947124cab3ccf965da59381df6"
   name = "github.com/Microsoft/go-winio"
   packages = ["."]
   pruneopts = "UT"
@@ -18,7 +18,7 @@
   version = "v2.0.0"
 
 [[projects]]
-  digest = "1:00a2069a86806eb551c15e8e4c6606357cc8e3a905767a1eca6812f8e4a28d2a"
+  digest = "1:3cabbabc9e0e4aa7e12b882bdc213f41cf8bd2b2ce2a7b5e0aceaf8a6a78049b"
   name = "github.com/docker/distribution"
   packages = [
     "digest",
@@ -29,7 +29,7 @@
   version = "v2.6.2"
 
 [[projects]]
-  digest = "1:e9efbe4c9d0760c0a80dd8869d887d6ac1c5cd356fd0fac24003d8ae48a9f57f"
+  digest = "1:58287951ff22d1417122576c8c7ea36d9fea5bdf359c2691b440a4615c0086c3"
   name = "github.com/docker/docker"
   packages = [
     "api/types",
@@ -54,7 +54,7 @@
   version = "v17.03.2-ce-rc1"
 
 [[projects]]
-  digest = "1:15e7be8bdfcc1ea804cedc8e3187605c58642cddd1d333781b888e4873c1ed5b"
+  digest = "1:8866486038791fe65ea1abf660041423954b1f3fb99ea6a0ad8424422e943458"
   name = "github.com/docker/docker-credential-helpers"
   packages = [
     "client",
@@ -65,7 +65,7 @@
   version = "v0.6.1"
 
 [[projects]]
-  digest = "1:e76dacf1c43685d6abc79c89bab193362c2028744e57eee425ebfa277b46efb2"
+  digest = "1:b6b5c3e8da0fb8073cd2886ba249a40f4402b4391ca6eba905a142cceea97a12"
   name = "github.com/docker/go-connections"
   packages = [
     "nat",
@@ -85,7 +85,7 @@
   version = "v0.3.3"
 
 [[projects]]
-  digest = "1:0417f48517eafe384b94fd38238b699c3714b5f12554e8a212446d58b024d2a2"
+  digest = "1:de4a74b504df31145ffa8ca0c4edbffa2f3eb7f466753962184611b618fa5981"
   name = "github.com/emirpasic/gods"
   packages = [
     "containers",
@@ -100,7 +100,7 @@
   version = "v1.9.0"
 
 [[projects]]
-  digest = "1:1d3c04f76c711e65d6884d8e09be07f6d21e89219ea68158ad86a22127417723"
+  digest = "1:a4a50f7eaa7c828785959c2ea903588749fdb0dc5846c7d4475d104dda80038f"
   name = "github.com/fsouza/go-dockerclient"
   packages = [
     ".",
@@ -183,7 +183,7 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:872fa275c31e1f9db31d66fa9b1d4a7bb9a080ff184e6977da01f36bfbe07f11"
+  digest = "1:645cabccbb4fa8aab25a956cbcbdf6a6845ca736b2c64e197ca7cbb9d210b939"
   name = "github.com/spf13/cobra"
   packages = ["."]
   pruneopts = "UT"
@@ -199,7 +199,7 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:e757a42ef7cb21b4cfa0ca29a2ed8009944ef017cd9b1d4ac3998ce803dd5e8d"
+  digest = "1:3681df693b35e7df9937dbd54b9f179aee5b54f4a28f72ad191e87038e6ffcab"
   name = "github.com/src-d/gcfg"
   packages = [
     ".",
@@ -221,7 +221,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:2c9f42498726d3ad6edb0c8a9b9b395c0d54636801b57ae5977fe6601a34bc90"
+  digest = "1:99a20dcba543e01a36100ff91ada8309ce4a20293339fe5b29345d308967be75"
   name = "golang.org/x/crypto"
   packages = [
     "cast5",
@@ -246,7 +246,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:6fa08649c5b3bd0f090898aff37a4bd024c7d599d61cc3c76fed66a322d8bf13"
+  digest = "1:58cb5fbdf85e1f468c749aa31773ff102866831106f52762b2823ae235ca11e7"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -266,7 +266,7 @@
   revision = "8014b7b116a67fea23fbb82cd834c9ad656ea44b"
 
 [[projects]]
-  digest = "1:038003d098ffc345c4c5c6d47bcc6920b2649ee0c0d557162e54e75c76cadf8b"
+  digest = "1:8029e9743749d4be5bc9f7d42ea1659471767860f0cdc34d37c3111bd308a295"
   name = "golang.org/x/text"
   packages = [
     "internal/gen",
@@ -281,7 +281,7 @@
   version = "v0.3.0"
 
 [[projects]]
-  digest = "1:91b21db65fe2bdc4819da4cd1484e154877635451ab6ca4f4baf6fb0112ffc8a"
+  digest = "1:2f4f2bf8c0a7192102ce77b97e040a3a928d9cba048dd329f5164b3057351c30"
   name = "gopkg.in/src-d/go-billy.v4"
   packages = [
     ".",
@@ -295,7 +295,7 @@
   version = "v4.1.1"
 
 [[projects]]
-  digest = "1:a05edfee51cda6fefc33f5816afa99a178d4b8f58759e2c314bdcbf21b46dc80"
+  digest = "1:20657b3b444ad2f2ef4a820f47acfdafaf352cf42707066c0242047689f2bc7c"
   name = "gopkg.in/src-d/go-git.v4"
   packages = [
     ".",

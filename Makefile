@@ -29,12 +29,12 @@ golang:
 build:
 	@echo "--> Compiling the project"
 	mkdir -p bin
-	go build -ldflags "${LFLAGS}" -o bin/${NAME} cmd/artefactor/*.go
+	CGO_ENABLED=0 go build -ldflags "${LFLAGS}" -o bin/${NAME} cmd/artefactor/*.go
 
 release: clean deps release-deps
 	@echo "--> Compiling all the static binaries"
 	mkdir -p bin
-	gox -arch="${ARCHITECTURES}" -os="${PLATFORMS}" -ldflags "-w ${LFLAGS}" -output=./bin/{{.Dir}}_{{.OS}}_{{.Arch}} ./...
+	CGO_ENABLED=0 gox -arch="${ARCHITECTURES}" -os="${PLATFORMS}" -ldflags "-w ${LFLAGS}" -output=./bin/{{.Dir}}_{{.OS}}_{{.Arch}} ./...
 	cd ./bin && sha256sum * > checksum.txt && cd -
 
 clean:
