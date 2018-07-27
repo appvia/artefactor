@@ -92,8 +92,8 @@ func RestoreHome(gitRepoFile string, dst string, savedDir string) error {
 
 	// Get the list of files from the checksum file (hashcache) in the source
 	// directory.
-	dstDir := filepath.Join(
-		filepath.Clean(dst), repoName, filepath.Clean(savedDir))
+	repoPath := filepath.Join(filepath.Clean(dst), repoName)
+	dstDir := filepath.Join(repoPath, filepath.Clean(savedDir))
 	refresh := false
 	log.Printf("dst:%s\nRepo:%s\nSavedDir:%s\n==>%s", dst, repoName, savedDir, dstDir)
 	if _, err := os.Stat(dstDir); err == nil {
@@ -147,12 +147,24 @@ func RestoreHome(gitRepoFile string, dst string, savedDir string) error {
 			src,
 			dstDir)
 	}
+	// Add check for clean destination git repo...
+	if refresh {
+		clean, err := git.IsClean(repoPath)
+		if err != nil {
+			return fmt.Errorf("can't read git repo at %s:%s", repoPath, err)
+		}
+		if !clean {
+			return fmt.Errorf(
+				"destination repo is NOT clean, please clean then restore (%s)",
+				repoPath)
+		}
+	}
 
 	// Pre-flight checks OK...
 	fmt.Printf(
 		"Restoring git files from %s to %s\n",
 		gitRepoFile,
-		filepath.Join(dst, repoName))
+		repoPath)
 	if err := git.Restore(gitRepoFile, dst, repoName); err != nil {
 		return err
 	}
