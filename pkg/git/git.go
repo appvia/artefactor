@@ -102,6 +102,25 @@ func Archive(repoPath string, saveDir string) error {
 	return nil
 }
 
+// IsClean will report is a repo is clean given a path
+func IsClean(repoPath string) (bool, error) {
+	r, err := git.PlainOpen(repoPath)
+	if err != nil {
+		return false, err
+	}
+
+	// Check if clean
+	w, err := r.Worktree()
+	if err != nil {
+		return false, err
+	}
+	status, err := w.Status()
+	if err != nil {
+		return false, err
+	}
+	return status.IsClean(), nil
+}
+
 // Restore will extract a git repository to the correct path under the dst
 // directory
 func Restore(gitRepoFile string, dst string, repoName string) error {
