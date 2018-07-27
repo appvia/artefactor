@@ -49,10 +49,6 @@ func init() {
 
 func imageNames(c *cobra.Command) error {
 	common(c)
-	src := c.Flag(FlagArchiveDir).Value.String()
-	if _, err := os.Stat(src); err != nil {
-		return fmt.Errorf("missing archive %s. error: %s", src, err)
-	}
 	// get the registry (if specified)
 	registry := c.Flag(FlagDockerRegistry).Value.String()
 	// Complain if no registry is specified
