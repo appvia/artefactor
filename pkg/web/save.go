@@ -42,7 +42,7 @@ func Save(
 	}
 
 	if err := SaveNoCheck(url, download, binFile); err != nil {
-		fmt.Printf("download problem:%s", err)
+		return fmt.Errorf("download problem:%s", err)
 	}
 
 	// Now the file is updated - update the checksum...
