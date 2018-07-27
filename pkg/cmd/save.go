@@ -103,8 +103,13 @@ func save(c *cobra.Command) error {
 		}
 	}
 
+	// Create a new CheckSumCache:
+	hc, err := hashcache.NewFromDir(saveDir, false)
+	if err != nil {
+		return fmt.Errorf("cant create cache for dir %s:%s", saveDir, err)
+	}
 	fmt.Println("Saving meta-data and me")
-	if err := saveSavedPath(saveDir); err != nil {
+	if err := saveSavedPath(hc, saveDir); err != nil {
 		return fmt.Errorf(
 			"problem saving meta data file to record archive path %s:%s",
 			saveDir,
@@ -113,7 +118,7 @@ func save(c *cobra.Command) error {
 
 	// Save the binary for the target platform
 	platform := c.Flag(FlagTargetPlatform).Value.String()
-	if err := saveMe(saveDir, platform); err != nil {
+	if err := saveMe(hc, saveDir, platform); err != nil {
 		return err
 	}
 
@@ -121,7 +126,7 @@ func save(c *cobra.Command) error {
 	gitRepos := strings.Fields(c.Flag(FlagGitRepos).Value.String())
 	for _, repo := range gitRepos {
 		fmt.Printf("\nSaving git repos\n")
-		if err := git.Archive(repo, saveDir); err != nil {
+		if err := git.Archive(hc, repo, saveDir); err != nil {
 			return fmt.Errorf(
 				"problem saving git repository %s to directory %s:%s",
 				repo,
@@ -134,7 +139,7 @@ func save(c *cobra.Command) error {
 	images := getImages(c)
 	for _, image := range images {
 		fmt.Printf("\nSaving docker images\n")
-		if err := docker.Save(image, saveDir); err != nil {
+		if err := docker.Save(hc, image, saveDir); err != nil {
 			return fmt.Errorf(
 				"problem saving docker image %s to directory %s:%s",
 				image,
@@ -146,7 +151,7 @@ func save(c *cobra.Command) error {
 	// Now save Web files
 	for _, webFile := range webFiles {
 		fmt.Printf("\nSaving web files\n")
-		if err := web.Save(webFile.url, webFile.fileName, saveDir, webFile.sha, webFile.bin); err != nil {
+		if err := web.Save(hc, webFile.url, webFile.fileName, saveDir, webFile.sha, webFile.bin); err != nil {
 			return fmt.Errorf(
 				"problem saving url:%s to filename %s/%s:%s",
 				webFile.url,
@@ -154,6 +159,9 @@ func save(c *cobra.Command) error {
 				webFile.fileName,
 				err)
 		}
+	}
+	if err := hc.Clean(); err != nil {
+		return fmt.Errorf("problem saving new set of files:%s", err)
 	}
 	fmt.Printf("all artefacts correct and present\n")
 	return nil
@@ -182,12 +190,12 @@ func contains(ary []string, item string) bool {
 }
 
 // saveMe saves a copy of the target binary in the save dir
-func saveMe(saveDir, platform string) error {
+func saveMe(c *hashcache.CheckSumCache, saveDir string, platform string) error {
 	binaryDst := filepath.Join(saveDir, ArtefactorBinaryName)
 	// detect if the binary we are saving with matches target platform...
 	if fmt.Sprintf("%s_%s", runtime.GOOS, runtime.GOARCH) == platform {
 		me, _ := os.Executable()
-		if err := copyBin(me, saveDir); err != nil {
+		if err := copyBin(c, me, saveDir); err != nil {
 			return fmt.Errorf(
 				"problem trying to save %s as %s:%s",
 				me,
@@ -249,10 +257,10 @@ func saveMe(saveDir, platform string) error {
 				err)
 		}
 
-		if _, err := hashcache.UpdateCache(binaryDst); err != nil {
+		if _, err := c.Update(binaryDst); err != nil {
 			return fmt.Errorf("unable to update hash for %s:%s", binaryDst, err)
 		}
-		if err := util.BinMark(binaryDst); err != nil {
+		if err := util.BinMark(c, binaryDst); err != nil {
 			return fmt.Errorf(
 				"problem creating meta data file for %s:%s", binaryDst, err)
 		}
@@ -261,21 +269,21 @@ func saveMe(saveDir, platform string) error {
 }
 
 // copyBin will save binary meta-data for a local binary to the archive dir
-func copyBin(srcBin string, saveDir string) error {
+func copyBin(c *hashcache.CheckSumCache, srcBin string, saveDir string) error {
 	savedBin := filepath.Join(saveDir, filepath.Base(srcBin))
 	if err := util.Cp(srcBin, savedBin); err != nil {
 		return err
 	}
-	if _, err := hashcache.UpdateCache(savedBin); err != nil {
+	if _, err := c.Update(savedBin); err != nil {
 		return err
 	}
-	err := util.BinMark(savedBin)
+	err := util.BinMark(c, savedBin)
 	return err
 }
 
 // saveSavedPath will record meta-data so files are restored to the same
 // relative path
-func saveSavedPath(saveDir string) error {
+func saveSavedPath(c *hashcache.CheckSumCache, saveDir string) error {
 	// Save the archive dir as meta-data file:
 	saveDir = filepath.Clean(saveDir)
 	saveMetaFilePath := filepath.Join(saveDir, SaveDirMetaFile)
@@ -286,8 +294,8 @@ func saveSavedPath(saveDir string) error {
 	if err != nil {
 		return err
 	}
-	hashcache.UpdateCache(saveMetaFilePath)
-	return nil
+	_, err = c.Update(saveMetaFilePath)
+	return err
 }
 
 // getSavedPath will retireve the saved path from the meta-data file.

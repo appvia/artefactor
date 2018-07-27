@@ -32,6 +32,7 @@ type CheckSumCache struct {
 	CheckSumsByFilePath map[string]CheckSumItem
 	Dir                 string
 	CheckSumFile        string
+	AddedItems          []CheckSumItem
 }
 
 // NewFromExistingFile creates an existing cache (relative from the file name)
@@ -61,10 +62,10 @@ func NewFromExistingFile(
 }
 
 // NewCacheFromDir instanciates a cache using the default cache file name given
-// a directory. Will error if checksum file is missing.
-func NewFromDir(dir string) (c *CheckSumCache, err error) {
+// a directory. Optionally error if checksum file is missing
+func NewFromDir(dir string, errIfMissing bool) (c *CheckSumCache, err error) {
 	c, err = NewFromCheckSumsFile(
-		filepath.Join(dir, DefaultCheckSumFileName), true)
+		filepath.Join(dir, DefaultCheckSumFileName), errIfMissing)
 	return c, err
 }
 
@@ -82,6 +83,33 @@ func NewFromCheckSumsFile(file string, errIfMissing bool) (c *CheckSumCache, err
 	}
 	c.readCheckSumsIfPresent()
 	return c, nil
+}
+
+// Clean will remove any old entries (not added using Update method)
+func (c *CheckSumCache) Clean() error {
+	removeItems := []string{}
+	// Check all the cache file entries
+	for key, item := range c.CheckSumsByFilePath {
+		keep := false
+		// Find the one's we've just added
+		for _, addedItem := range c.AddedItems {
+			if item.FileName == addedItem.FileName {
+				keep = true
+				break
+			}
+		}
+		if !keep {
+			// Keep track of items not added
+			removeItems = append(removeItems, key)
+		}
+	}
+	// Now clean up the old items
+	for _, item := range removeItems {
+		delete(c.CheckSumsByFilePath, item)
+	}
+	// Lastly save the checksum file
+	err := c.writeCheckSums()
+	return err
 }
 
 // IsCachedMatched will verify if a file is in Cache AND matching expected sha256
@@ -135,6 +163,8 @@ func (c *CheckSumCache) Update(file string) (checksum string, err error) {
 	}
 	// Replace / create the entry
 	c.CheckSumsByFilePath[file] = item
+	// Keep a track in memory of items added
+	c.AddedItems = append(c.AddedItems, item)
 	c.writeCheckSums()
 	return checksum, nil
 }
@@ -191,21 +221,6 @@ func (c *CheckSumCache) writeCheckSums() error {
 	return nil
 }
 
-// UpdateCache will write a new cache entry into checksum file
-func UpdateCache(file string) (string, error) {
-	// Create a new CheckSumCache:
-	c, err := NewFromExistingFile(file, true)
-	if err != nil {
-		return "", err
-	}
-	item, present := c.CheckSumsByFilePath[file]
-	if present {
-		return item.CheckSum, nil
-	} else {
-		return "", fmt.Errorf("problem retrieving checksum for %s", file)
-	}
-}
-
 // GetCachedChecksum will return previously calculated checksum
 func GetCachedChecksum(file string) (string, error) {
 	file = filepath.Clean(file)
@@ -225,7 +240,7 @@ func GetCachedChecksum(file string) (string, error) {
 
 // GetFiles will return a list of files from cache
 func GetFiles(path string) []string {
-	c, err := NewFromDir(path)
+	c, err := NewFromDir(path, true)
 	if err != nil {
 		log.Printf("error opening cache:%s", err)
 	}

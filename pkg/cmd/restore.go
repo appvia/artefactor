@@ -103,7 +103,7 @@ func RestoreHome(gitRepoFile string, dst string, savedDir string) error {
 	var missingFiles []string
 	// Verify if we have everything we need BEFORE moving files
 	// Check we have all files in source OR destination BEFORE we start to copy...
-	srcChk, err := hashcache.NewFromDir(src)
+	srcChk, err := hashcache.NewFromDir(src, true)
 	if err != nil {
 		return fmt.Errorf("problem with checksum file in folder %s:%s", src, err)
 	}

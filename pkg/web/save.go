@@ -14,6 +14,7 @@ import (
 
 // Save will save a file from the web and optionaly set executable mode
 func Save(
+	c *hashcache.CheckSumCache,
 	url string,
 	fileName string,
 	dir string,
@@ -22,14 +23,10 @@ func Save(
 
 	download := fmt.Sprintf("%s/%s", dir, fileName)
 	// Check checksum cache first...
-	c, err := hashcache.NewFromExistingFile(download, false)
-	if err != nil {
-		return fmt.Errorf("problem getting cache from file:%s", err)
-	}
 	if c.IsCachedMatched(download, sha256) {
 		fmt.Printf("file %q in cache and matching checksum %s\n", download, sha256)
 		if binFile {
-			util.BinMark(download)
+			util.BinMark(c, download)
 		}
 		return nil
 	} else {
@@ -43,6 +40,13 @@ func Save(
 
 	if err := SaveNoCheck(url, download, binFile); err != nil {
 		return fmt.Errorf("download problem:%s", err)
+	}
+
+	// Save the file mode meta data if it's a binary
+	if binFile {
+		if err := util.BinMark(c, download); err != nil {
+			return err
+		}
 	}
 
 	// Now the file is updated - update the checksum...
@@ -99,13 +103,6 @@ Loop:
 		// Update the executable mode:
 		if err := os.Chmod(download, 0777); err != nil {
 			return errors.Errorf("can't set executable permissions")
-		}
-	}
-
-	// Set file mode if it's a binary
-	if binFile {
-		if err := util.BinMark(download); err != nil {
-			return err
 		}
 	}
 	return nil
