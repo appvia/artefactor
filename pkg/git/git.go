@@ -19,7 +19,7 @@ const (
 )
 
 // Archive will create a git archive from a local path
-func Archive(repoPath string, saveDir string) error {
+func Archive(c *hashcache.CheckSumCache, repoPath string, saveDir string) error {
 	// TODO: add if local path ! exist try and clone first...
 
 	fmt.Printf("Archiving git repo %s\n", repoPath)
@@ -96,10 +96,8 @@ func Archive(repoPath string, saveDir string) error {
 	}
 
 	// Lastly update the checksums
-	if hashcache.UpdateCache(tarFileName); err != nil {
-		return err
-	}
-	return nil
+	_, err = c.Update(tarFileName)
+	return err
 }
 
 // IsClean will report is a repo is clean given a path

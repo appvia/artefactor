@@ -24,7 +24,7 @@ type SaveEvent struct {
 }
 
 // Save will save a docker image
-func Save(image string, dir string) error {
+func Save(c *hashcache.CheckSumCache, image string, dir string) error {
 	ctx := context.Background()
 	cli, err := client.NewEnvClient()
 	if err != nil {
@@ -79,9 +79,7 @@ func Save(image string, dir string) error {
 	if err != nil {
 		return err
 	}
-	if hashcache.UpdateCache(archiveFile); err != nil {
-		return err
-	}
-
-	return nil
+	// Update the cache with checksum
+	_, err = c.Update(archiveFile)
+	return err
 }

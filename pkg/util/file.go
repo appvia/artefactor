@@ -54,9 +54,9 @@ func Mv(src string, dst string) error {
 }
 
 // BinMark marks a file as binary and update meta data checksum
-func BinMark(download string) error {
+func BinMark(c *hashcache.CheckSumCache, download string) error {
 	binMark := download + ".binmark.meta"
 	os.Create(binMark)
-	hashcache.UpdateCache(binMark)
-	return nil
+	_, err := c.Update(binMark)
+	return err
 }
