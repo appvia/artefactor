@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/appvia/artefactor/pkg/hashcache"
+	"github.com/appvia/artefactor/pkg/util"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 )
@@ -24,7 +25,7 @@ type SaveEvent struct {
 }
 
 // Save will save a docker image
-func Save(c *hashcache.CheckSumCache, image string, dir string) error {
+func Save(c *hashcache.CheckSumCache, image string, dir string, creds *util.Creds) error {
 	ctx := context.Background()
 	cli, err := client.NewEnvClient()
 	if err != nil {
@@ -32,7 +33,16 @@ func Save(c *hashcache.CheckSumCache, image string, dir string) error {
 	}
 	// Load auth details from .docker config
 	var ipo types.ImagePullOptions
-	ipo.RegistryAuth = GetAuth(image)
+	if creds != nil {
+		if auth, err := GetAuthString(
+			image, creds.Username, creds.Password); err != nil {
+			return fmt.Errorf("error with credentials provided:%s", err)
+		} else {
+			ipo.RegistryAuth = auth
+		}
+	} else {
+		ipo.RegistryAuth = GetAuth(image)
+	}
 	events, err := cli.ImagePull(ctx, image, ipo)
 	if err != nil {
 		return (err)

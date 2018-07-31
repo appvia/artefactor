@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/appvia/artefactor/pkg/util"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 )
@@ -22,7 +23,7 @@ type PushEvent struct {
 }
 
 // Push will push a docker image
-func Push(image string) error {
+func Push(image string, creds *util.Creds) error {
 	ctx := context.Background()
 	cli, err := client.NewEnvClient()
 	if err != nil {
@@ -30,7 +31,16 @@ func Push(image string) error {
 	}
 	// Load auth details from .docker config
 	var ipo types.ImagePushOptions
-	ipo.RegistryAuth = GetAuth(image)
+	if creds != nil {
+		if auth, err := GetAuthString(
+			image, creds.Username, creds.Password); err != nil {
+			return fmt.Errorf("error with credentials provided:%s", err)
+		} else {
+			ipo.RegistryAuth = auth
+		}
+	} else {
+		ipo.RegistryAuth = GetAuth(image)
+	}
 	events, err := cli.ImagePush(ctx, image, ipo)
 	if err != nil {
 		return (err)
