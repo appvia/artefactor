@@ -165,11 +165,12 @@ func RestoreHome(gitRepoFile string, dst string, savedDir string) error {
 		"Restoring git files from %s to %s\n",
 		gitRepoFile,
 		repoPath)
-	if err := git.Restore(gitRepoFile, dst, repoName); err != nil {
+	if err := git.Restore(gitRepoFile, dst, repoName, savedDir); err != nil {
 		return err
 	}
-
-	if !refresh {
+	// This may not exist even after an update due to the way files are moved
+	if _, err := os.Stat(dstDir); os.IsNotExist(err) {
+		log.Printf("the dir doesn't exist %s so creating it...", dstDir)
 		if err := os.MkdirAll(dstDir, 0755); err != nil {
 			return fmt.Errorf(
 				"problem creating destination directory structure %s:%s",

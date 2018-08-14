@@ -3,6 +3,8 @@ package git
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -121,13 +123,65 @@ func IsClean(repoPath string) (bool, error) {
 
 // Restore will extract a git repository to the correct path under the dst
 // directory
-func Restore(gitRepoFile string, dst string, repoName string) error {
-	if err := os.RemoveAll(filepath.Join(dst, repoName, ".git")); err != nil {
-		return err
+func Restore(gitRepoFile, dst, repoName, artefactsDir string) error {
+	// If the destination path doesn't exist...
+	repoPath := filepath.Join(dst, repoName)
+	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
+		log.Printf("%s doesn't exist, extracting files", repoPath)
+		if err := tar.Extract(gitRepoFile, dst); err != nil {
+			return fmt.Errorf("problem checking out files to %s:%s", dst, err)
+		}
+		return nil
 	}
-	// first remove any git meta-data:
-	if err := tar.Extract(gitRepoFile, dst); err != nil {
-		return err
+	// When refreshing, extract the repo files to a clean temp directory first
+	tmpD, err := ioutil.TempDir(dst, repoName+"_artefactor_tmp")
+	tmpRepoPath := filepath.Join(tmpD, repoName)
+	if err != nil {
+		return fmt.Errorf("error creating temp dir in %s for clean extraction", dst)
+	}
+	log.Printf("%s exists, extracting to temp dir %s", repoPath, tmpD)
+	if err := tar.Extract(gitRepoFile, tmpD); err != nil {
+		return fmt.Errorf(
+			"problem extracting files to tempdir %s from %s:%s",
+			tmpD,
+			gitRepoFile,
+			err)
+	}
+	// Now we have a clean repo, move the downloads to the TempDir...
+	downloads := filepath.Join(repoPath, artefactsDir)
+	tmpDownloads := filepath.Join(tmpRepoPath, artefactsDir)
+	// First check if we had any downloads before
+	if _, err = os.Stat(downloads); err == nil {
+		log.Printf("%s exists, moving it to %s", downloads, tmpDownloads)
+		// Move the previous downloads
+		if err = os.Rename(downloads, tmpDownloads); err != nil {
+			return fmt.Errorf(
+				"error moving %s to clean chekout temp dir %s:%s",
+				downloads,
+				tmpDownloads,
+				err)
+		}
+	}
+	log.Printf("Now moving %s to %s", tmpRepoPath, repoPath)
+	if _, err = os.Stat(repoPath); err == nil {
+		// Amazingly, go's os.Rename will not error if a directory exists
+		// and fail to rename, so we delete here!
+		if err = os.RemoveAll(repoPath); err != nil {
+			fmt.Errorf("error removing old repo before replace %s:%s", repoPath, err)
+		}
+	}
+	// Move the old checkout with the clean extracted files
+	if err = os.Rename(tmpRepoPath, repoPath); err != nil {
+		fmt.Errorf(
+			"error moving %s back to %s after clean checkout:%s",
+			tmpRepoPath,
+			repoPath,
+			err)
+	}
+	// We didn't defer as we have to do this last
+	// (don't want to loose any downloads!)
+	if err = os.RemoveAll(tmpD); err != nil {
+		return fmt.Errorf("warning, can't clean up temp files %s:%s", tmpD, err)
 	}
 	return nil
 }
