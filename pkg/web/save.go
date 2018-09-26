@@ -68,8 +68,9 @@ func SaveNoCheck(
 	download string,
 	binFile bool,
 ) error {
+	tmpDownload := download + ".download"
 	client := grab.NewClient()
-	req, _ := grab.NewRequest(download, url)
+	req, _ := grab.NewRequest(tmpDownload, url)
 
 	// start download
 	fmt.Printf("Downloading %q...\n", req.URL())
@@ -98,7 +99,18 @@ Loop:
 	if err := resp.Err(); err != nil {
 		return err
 	}
-	fmt.Printf("Download saved to %v \n", resp.Filename)
+	if _, err := os.Stat(download); err == nil {
+		if rmErr := os.Remove(download); rmErr != nil {
+			return fmt.Errorf(
+				"can not remove %q. Trying to update from %q",
+				download,
+				resp.Filename)
+		}
+		if util.Mv(resp.Filename, download); err != nil {
+			return err
+		}
+	}
+	fmt.Printf("Download saved to %v \n", download)
 	if binFile {
 		// Update the executable mode:
 		if err := os.Chmod(download, 0777); err != nil {
