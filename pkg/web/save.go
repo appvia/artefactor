@@ -31,9 +31,9 @@ func Save(
 		return nil
 	} else {
 		if c.IsCached(download) {
-			fmt.Printf("file %q is in cache but does NOT match checksum %s", download, sha256)
+			fmt.Printf("file %q is in cache but does NOT match checksum %s\n", download, sha256)
 			// need to delete file for now and manage partial recovery logic in lib...
-			fmt.Printf("deleting file %q", download)
+			fmt.Printf("deleting file %q\n", download)
 			os.Remove(download)
 		} // else not cached...
 	}
