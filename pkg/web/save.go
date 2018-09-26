@@ -25,6 +25,8 @@ func Save(
 	// Check checksum cache first...
 	if c.IsCachedMatched(download, sha256) {
 		fmt.Printf("file %q in cache and matching checksum %s\n", download, sha256)
+		// Make sure we tell cache to keep this item:
+		c.Keep(download)
 		if binFile {
 			util.BinMark(c, download)
 		}
