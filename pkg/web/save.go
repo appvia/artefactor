@@ -108,9 +108,9 @@ Loop:
 				download,
 				resp.Filename)
 		}
-		if util.Mv(resp.Filename, download); err != nil {
-			return err
-		}
+	}
+	if err := util.Mv(resp.Filename, download); err != nil {
+		return err
 	}
 	fmt.Printf("Download saved to %v \n", download)
 	if binFile {
