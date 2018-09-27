@@ -55,6 +55,18 @@ func init() {
 		"",
 		"the whitelist separated list of variables specifying orininal image names")
 
+	addFlagWithEnvDefault(
+		saveCmd,
+		FlagDockerUserName,
+		"",
+		FlagDockerUserNameHelp)
+
+	addFlagWithEnvDefault(
+		saveCmd,
+		FlagDockerPassword,
+		"",
+		FlagDockerPasswordHelp)
+
 	RootCmd.AddCommand(saveCmd)
 }
 
@@ -139,7 +151,7 @@ func save(c *cobra.Command) error {
 	images := getImages(c)
 	for _, image := range images {
 		fmt.Printf("\nSaving docker images\n")
-		if err := docker.Save(hc, image, saveDir); err != nil {
+		if err := docker.Save(hc, image, saveDir, getCredsFromFlags(c)); err != nil {
 			return fmt.Errorf(
 				"problem saving docker image %s to directory %s:%s",
 				image,

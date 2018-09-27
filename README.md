@@ -8,6 +8,7 @@ Artefactor's primary use case is to enable "moving" a git repository and the
 
 - [Details](#details)
 - [Usage](#usage)
+    - [Use in CI/CD](#usage-in-ci)
 - [Build](#build)
 - [Roadmap](#roadmap)
 
@@ -43,7 +44,8 @@ Artefacts can be specified as flags or as environment variables with the followi
 | `--docker-images` | docker-image docker-image | A white-space delimited set of docker images | `mysql alpine` |
 | `--image-vars` | `"MYSQL_IMAGE ANOTHER_IMAGE"` | A white-space delimited set of image variable names | Given:</br>`export MYSQL_IMAGE=mysql:v5.0`</br>`export ALPINE_IMAGE=alpine` </br> Use: </br>`"MYSQL_IMAGE ALPINE_IMAGE"`|
 | `--web-files` | url,filename,sha256[,true/false] | A white-space separated list of CSV's in the following format: </br></br>`url` is where to download from</br></br> `filename` is the name to save locally</br></br> `sha256` is the expected checksum</br></br>The optional last parameter specifies if the file should have executable permissions | `https://bit.ly/2ySXztI,kd,2f7...,true https://bit.ly/abc.iso,my.iso,abc...` |
-
+| `--docker-username` | `usernmame` | A valid docker registry user-name see # | `bob` |
+| `--docker-password` | `testing` | A valid docker registry password | `testing` |
 
 *Common Flags:*
 ```
@@ -51,6 +53,7 @@ artefactor save --git-repos=.\
                 --docker-images="mysql alpine" \
                 --web-files https://github.com/UKHomeOffice/kd/releases/download/v0.13.0/kd_linux_amd64,kd,2f729bb26e225bcf61aa62a03d210f9a238d1c7b1666c1d72964decf7120466a,true
 ```
+
 *Environment:*
 
 ```
@@ -125,6 +128,17 @@ export CASSANDRA_IMAGE=myreg.local/cassandra:latest
 **Note**: only images known to artefactor (from the downloads meta-data) and
  variable names white-listed using `ARTEFACTOR_IMAGE_VARS` or the flag
 `--image-vars` will "be exported".
+
+### Usage in CI
+In CI/CD environments the following docker authentication environment variables
+and corresponding flags are supported for both the `save` and `publish` sub commands:
+```
+export ARTEFACTOR_DOCKER_USERNAME=bob
+export ARTEFACTOR_DOCKER_PASSWORD=testing
+```
+
+**Note**: A local docker daemon is required for publishing containers to 
+registries but not for saving from registries.
 
 ## Build
 

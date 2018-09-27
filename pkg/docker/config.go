@@ -50,17 +50,29 @@ func GetAuth(image string) string {
 		log.Printf(
 			"auth details retrieved from keychain for username:%q",
 			creds.Username)
-		encodedJSON, err := json.Marshal(c.AuthConfiguration{
-			Username:      creds.Username,
-			Password:      creds.Secret,
-			ServerAddress: registry,
-		})
-		if err != nil {
-			log.Printf("problem parsing auths")
+		if authStr, err := GetAuthString(
+			registry, creds.Username, creds.Secret); err != nil {
+			log.Printf("problem parsing auths %s", err)
+			return ""
+		} else {
+			return authStr
 		}
-		authStr := base64.URLEncoding.EncodeToString(encodedJSON)
-		log.Printf("auth string:%q", authStr)
-		return authStr
 	}
 	return ""
+}
+
+// GetAuthString will return a valid auth string from credentials
+func GetAuthString(image, username, password string) (string, error) {
+	registry := strings.Split(image, "/")[0]
+	encodedJSON, err := json.Marshal(c.AuthConfiguration{
+		Username:      username,
+		Password:      password,
+		ServerAddress: registry,
+	})
+	if err != nil {
+		return "", err
+	}
+	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
+	log.Printf("auth string:%q", authStr)
+	return authStr, nil
 }

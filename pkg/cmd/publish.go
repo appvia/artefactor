@@ -37,6 +37,18 @@ func init() {
 		"",
 		"where to publish images e.g. private-registry.local")
 
+	addFlagWithEnvDefault(
+		publishCmd,
+		FlagDockerUserName,
+		"",
+		FlagDockerUserNameHelp)
+
+	addFlagWithEnvDefault(
+		publishCmd,
+		FlagDockerPassword,
+		"",
+		FlagDockerPasswordHelp)
+
 	RootCmd.AddCommand(publishCmd)
 }
 
@@ -75,7 +87,7 @@ func publish(c *cobra.Command) error {
 				image.NewImageName, err)
 		}
 		fmt.Printf("pushing image %s\n", image.NewImageName)
-		if err := docker.Push(image.NewImageName); err != nil {
+		if err := docker.Push(image.NewImageName, getCredsFromFlags(c)); err != nil {
 			return fmt.Errorf(
 				"problem pushing image %s to registry:%s",
 				image.NewImageName,

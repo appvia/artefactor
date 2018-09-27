@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/appvia/artefactor/pkg/util"
 	"github.com/spf13/cobra"
 )
 
@@ -29,6 +30,14 @@ const (
 	// FlagImageVars is used to specify a whitelist of variable names to enable
 	// "export"
 	FlagImageVars = "image-vars"
+	// FlagDockerUserName overrides docker registry configuration
+	FlagDockerUserName = "docker-username"
+	// FlagDockerPassword overrides docker registry configuration
+	FlagDockerPassword = "docker-password"
+	// FlagDockerPasswordHelp is displayed when getting help for the flag
+	FlagDockerPasswordHelp = "overrides docker registry configuration for password"
+	// FlagDockerUserNameHelp is displayed when getting help for the flag
+	FlagDockerUserNameHelp = "overrides docker registry configuration for username"
 	// DefaultArchiveDir
 	DefaultArchiveDir = "downloads"
 	// DefaultTargetPlatform is the default binary type to include in downloads
@@ -96,6 +105,20 @@ func defaultValue(flagName string, defaultValue string) string {
 		return envValue
 	}
 	return defaultValue
+}
+
+func getCredsFromFlags(c *cobra.Command) *util.Creds {
+	username := c.Flag(FlagDockerUserName).Value.String()
+	password := c.Flag(FlagDockerPassword).Value.String()
+
+	if len(username) > 0 {
+		creds := &util.Creds{
+			Username: username,
+			Password: password,
+		}
+		return creds
+	}
+	return nil
 }
 
 func GetEnvName(flagName string) string {
