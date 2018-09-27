@@ -59,6 +59,8 @@ func publish(c *cobra.Command) error {
 		if len(registry) < 1 {
 			return fmt.Errorf("must specify registry for publish")
 		}
+	} else {
+		fmt.Printf("No images to publish.\n")
 	}
 	for _, image := range images {
 		fmt.Printf("Loading image from %s.\n", image.FileName)
