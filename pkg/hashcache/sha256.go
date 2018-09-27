@@ -169,6 +169,15 @@ func (c *CheckSumCache) Update(file string) (checksum string, err error) {
 	return checksum, nil
 }
 
+// Keep will mark a file (and checksum) so it won't be cleaned with .Clean
+func (c *CheckSumCache) Keep(file string) {
+	file = filepath.Clean(file)
+	if _, ok := c.CheckSumsByFilePath[file]; ok {
+		item := c.CheckSumsByFilePath[file]
+		c.AddedItems = append(c.AddedItems, item)
+	}
+}
+
 // readCheckSumsIfPresent populates the hashcache from checksum file (if it exists)
 func (c *CheckSumCache) readCheckSumsIfPresent() {
 	if _, err := os.Stat(c.CheckSumFile); err != nil {
