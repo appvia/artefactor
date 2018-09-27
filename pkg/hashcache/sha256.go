@@ -76,12 +76,12 @@ func NewFromCheckSumsFile(file string, errIfMissing bool) (c *CheckSumCache, err
 		Dir:                 filepath.Dir(file),
 		CheckSumsByFilePath: make(map[string]CheckSumItem),
 	}
+	c.readCheckSumsIfPresent()
 	if errIfMissing {
 		if _, err := os.Stat(c.CheckSumFile); os.IsNotExist(err) {
-			return nil, fmt.Errorf("no checksum file %q", c.CheckSumFile)
+			return c, fmt.Errorf("no checksum file %q", c.CheckSumFile)
 		}
 	}
-	c.readCheckSumsIfPresent()
 	return c, nil
 }
 
@@ -180,6 +180,8 @@ func (c *CheckSumCache) Keep(file string) {
 
 // readCheckSumsIfPresent populates the hashcache from checksum file (if it exists)
 func (c *CheckSumCache) readCheckSumsIfPresent() {
+	// Re-init in memory checksums
+	c.CheckSumsByFilePath = make(map[string]CheckSumItem)
 	if _, err := os.Stat(c.CheckSumFile); err != nil {
 		// No checksums created... yet...
 		fullpath, _ := filepath.Abs(c.CheckSumFile)
@@ -191,9 +193,6 @@ func (c *CheckSumCache) readCheckSumsIfPresent() {
 		log.Fatal(err)
 	}
 	defer csf.Close()
-
-	// Re-init in memory checksums
-	c.CheckSumsByFilePath = make(map[string]CheckSumItem)
 	// open checksum file
 	scanner := bufio.NewScanner(csf)
 	for scanner.Scan() {
