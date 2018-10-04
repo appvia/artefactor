@@ -34,17 +34,12 @@ func Save(c *hashcache.CheckSumCache, image string, dir string, creds *util.Cred
 			dir,
 			err)
 	}
-	if _, err := os.Stat(dir); err == nil {
+	if _, err := os.Stat(archiveFile); err == nil {
 		// docker tar exists, just check the previous checksum exists / correct
-		if c.IsCached(archiveFile) {
-			sha256, err := hashcache.CalcChecksum(archiveFile)
-			if err != nil {
-				return fmt.Errorf("error calculating checksum:%s\n", err)
-			}
-			if c.IsCachedMatched(archiveFile, sha256) {
-				fmt.Printf("Archive checksum matches (cached):%+v\n", archiveFile)
-				return nil
-			}
+		if c.IsCachedMatchingFile(archiveFile) {
+			fmt.Printf("file already downloaded and matching checksum:%+v\n", archiveFile)
+			c.Keep(archiveFile)
+			return nil
 		}
 	}
 
