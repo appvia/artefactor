@@ -26,6 +26,28 @@ type SaveEvent struct {
 
 // Save will save a docker image
 func Save(c *hashcache.CheckSumCache, image string, dir string, creds *util.Creds) error {
+
+	archiveFile, err := ImageToFilePath(image, dir)
+	if err != nil {
+		return fmt.Errorf("error getting image name from %s and %s:%s\n",
+			image,
+			dir,
+			err)
+	}
+	if _, err := os.Stat(dir); err == nil {
+		// docker tar exists, just check the previous checksum exists / correct
+		if c.IsCached(archiveFile) {
+			sha256, err := hashcache.CalcChecksum(archiveFile)
+			if err != nil {
+				return fmt.Errorf("error calculating checksum:%s\n", err)
+			}
+			if c.IsCachedMatched(archiveFile, sha256) {
+				fmt.Printf("Archive checksum matches (cached):%+v\n", archiveFile)
+				return nil
+			}
+		}
+	}
+
 	ctx := context.Background()
 	cli, err := client.NewEnvClient()
 	if err != nil {
@@ -69,7 +91,6 @@ func Save(c *hashcache.CheckSumCache, image string, dir string, creds *util.Cred
 	if err != nil {
 		return err
 	}
-	archiveFile, err := ImageToFilePath(image, dir)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		if err := os.MkdirAll(dir, 0744); err != nil {
 			return err
