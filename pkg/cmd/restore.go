@@ -234,7 +234,7 @@ func calcAndCheckSum(file string) error {
 				"missing checksum for %s from %s", file, dstChk.CheckSumFile)
 		} else {
 			return fmt.Errorf(
-				"failed for %s, expecting %s but got %s\n",
+				"failed for %s, expecting %v but got %s\n",
 				file,
 				expectedHash,
 				calcHash)

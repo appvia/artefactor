@@ -21,6 +21,8 @@ const (
 type CheckSumItem struct {
 	// CheckSum is the sha256sum initialy calculated
 	CheckSum string
+	// CheckSumCached indicates if the checksum has been calculated or cached
+	CheckSumCached bool
 	// FilePath is the full path to a file given a start directory
 	FilePath string
 	// FileName is a relative file name only
@@ -29,10 +31,10 @@ type CheckSumItem struct {
 
 // CheckSumCache defines data for a hash cache
 type CheckSumCache struct {
-	CheckSumsByFilePath map[string]CheckSumItem
-	Dir                 string
-	CheckSumFile        string
 	AddedItems          []CheckSumItem
+	CheckSumsByFilePath map[string]CheckSumItem
+	CheckSumFile        string
+	Dir                 string
 }
 
 // NewFromExistingFile creates an existing cache (relative from the file name)
@@ -124,6 +126,24 @@ func (c *CheckSumCache) IsCachedMatched(file string, sha256 string) bool {
 	return false
 }
 
+// IsCachedMatchingFile will check if the cache checksum matches calculated
+func (c *CheckSumCache) IsCachedMatchingFile(file string) bool {
+	file = filepath.Clean(file)
+	if c.IsCached(file) {
+		if c.CheckSumsByFilePath[file].CheckSumCached {
+			oldsha256 := c.CheckSumsByFilePath[file].CheckSum
+			// Cached - we need to check if it's still valid:
+			sha256, err := CalcChecksum(file)
+			if err != nil {
+				log.Printf("error calculating checksum:%s", err)
+			} else if oldsha256 == sha256 {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // IsCached will check if a file is present on disk and in the checksum file
 func (c *CheckSumCache) IsCached(file string) bool {
 	file = filepath.Clean(file)
@@ -157,9 +177,10 @@ func (c *CheckSumCache) Update(file string) (checksum string, err error) {
 	}
 	// Create a new item
 	item := CheckSumItem{
-		CheckSum: checksum,
-		FileName: filepath.Base(file),
-		FilePath: file,
+		CheckSum:       checksum,
+		FileName:       filepath.Base(file),
+		FilePath:       file,
+		CheckSumCached: false,
 	}
 	// Replace / create the entry
 	c.CheckSumsByFilePath[file] = item
@@ -204,9 +225,10 @@ func (c *CheckSumCache) readCheckSumsIfPresent() {
 		} else {
 			fileName := hashEntry[1]
 			item := CheckSumItem{
-				FilePath: filepath.Join(c.Dir, fileName),
-				FileName: fileName,
-				CheckSum: hashEntry[0],
+				FilePath:       filepath.Join(c.Dir, fileName),
+				FileName:       fileName,
+				CheckSum:       hashEntry[0],
+				CheckSumCached: true,
 			}
 			log.Printf("adding cache entry key=%q => checksum=%q", item.FilePath, item.CheckSum)
 			c.CheckSumsByFilePath[item.FilePath] = item
