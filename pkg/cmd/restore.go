@@ -171,7 +171,7 @@ func RestoreHome(gitRepoFile string, dst string, savedDir string) error {
 	// This may not exist even after an update due to the way files are moved
 	if _, err := os.Stat(dstDir); os.IsNotExist(err) {
 		log.Printf("the dir doesn't exist %s so creating it...", dstDir)
-		if err := os.MkdirAll(dstDir, 0755); err != nil {
+		if err := os.MkdirAll(dstDir, 0775); err != nil {
 			return fmt.Errorf(
 				"problem creating destination directory structure %s:%s",
 				dstDir,
