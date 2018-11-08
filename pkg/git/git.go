@@ -3,7 +3,6 @@ package git
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -134,13 +133,17 @@ func Restore(gitRepoFile, dst, repoName, artefactsDir string) error {
 		return nil
 	}
 	// When refreshing, extract the repo files to a clean temp directory first
-	tmpD, err := ioutil.TempDir(dst, repoName+"_artefactor_tmp")
-	tmpRepoPath := filepath.Join(tmpD, repoName)
+	tmpD := filepath.Join(dst, repoName+"_artefactor_tmp")
+	err := os.MkdirAll(tmpD, 0775)
 	if err != nil {
-		return fmt.Errorf("error creating temp dir in %s for clean extraction", dst)
+		return fmt.Errorf(
+			"error creating temp dir %s for clean extraction:%s",
+			tmpD,
+			err)
 	}
+	tmpRepoPath := filepath.Join(tmpD, repoName)
 	log.Printf("%s exists, extracting to temp dir %s", repoPath, tmpD)
-	if err := tar.Extract(gitRepoFile, tmpD); err != nil {
+	if err = tar.Extract(gitRepoFile, tmpD); err != nil {
 		return fmt.Errorf(
 			"problem extracting files to tempdir %s from %s:%s",
 			tmpD,

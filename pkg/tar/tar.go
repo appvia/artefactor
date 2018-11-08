@@ -94,7 +94,7 @@ func Extract(tarFn string, dst string) error {
 		// if its a dir and it doesn't exist create it
 		case tar.TypeDir:
 			if _, err := os.Stat(target); err != nil {
-				if err := os.MkdirAll(target, 0755); err != nil {
+				if err := os.MkdirAll(target, 0775); err != nil {
 					return err
 				}
 			}
@@ -104,7 +104,7 @@ func Extract(tarFn string, dst string) error {
 			dir := filepath.Dir(target)
 			// Check the path exists first
 			if _, err := os.Stat(dir); err != nil {
-				if err := os.MkdirAll(dir, 0755); err != nil {
+				if err := os.MkdirAll(dir, 0775); err != nil {
 					return err
 				}
 			}
