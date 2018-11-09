@@ -2,12 +2,31 @@
 
 
 [[projects]]
+  branch = "master"
+  digest = "1:6da51e5ec493ad2b44cb04129e2d0a068c8fb9bd6cb5739d199573558696bb94"
+  name = "github.com/Azure/go-ansiterm"
+  packages = [
+    ".",
+    "winterm",
+  ]
+  pruneopts = "UT"
+  revision = "d6e3b3328b783f23731bc4d058875b0371ff8109"
+
+[[projects]]
   digest = "1:bf42be3cb1519bf8018dfd99720b1005ee028d947124cab3ccf965da59381df6"
   name = "github.com/Microsoft/go-winio"
   packages = ["."]
   pruneopts = "UT"
   revision = "7da180ee92d8bd8bb8c37fc560e673e6557c392f"
   version = "v0.4.7"
+
+[[projects]]
+  digest = "1:69b1cc331fca23d702bd72f860c6a647afd0aa9fcbc1d0659b1365e26546dd70"
+  name = "github.com/Sirupsen/logrus"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "bcd833dfe83d3cebad139e4a29ed79cb2318bf95"
+  version = "v1.2.0"
 
 [[projects]]
   digest = "1:18d3339287ed981065cbffedb0dc81196638666d04c83141e973a9bfad1be4a4"
@@ -29,7 +48,7 @@
   version = "v2.6.2"
 
 [[projects]]
-  digest = "1:58287951ff22d1417122576c8c7ea36d9fea5bdf359c2691b440a4615c0086c3"
+  digest = "1:3de7ede1f2b886c924fd9c4d799195e33ddf41d6a90097d7cd1aeef3049dbef4"
   name = "github.com/docker/docker"
   packages = [
     "api/types",
@@ -47,6 +66,10 @@
     "api/types/versions",
     "api/types/volume",
     "client",
+    "pkg/jsonlog",
+    "pkg/jsonmessage",
+    "pkg/term",
+    "pkg/term/windows",
     "pkg/tlsconfig",
   ]
   pruneopts = "UT"
@@ -151,6 +174,14 @@
   version = "0.4"
 
 [[projects]]
+  digest = "1:0a69a1c0db3591fcefb47f115b224592c8dfa4368b7ba9fae509d5e16cdc95c8"
+  name = "github.com/konsorten/go-windows-terminal-sequences"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "5c8c8bd35d3832f5d134ae1e1e375b69a4d25242"
+  version = "v1.0.1"
+
+[[projects]]
   branch = "master"
   digest = "1:8eb17c2ec4df79193ae65b621cd1c0c4697db3bc317fe6afdc76d7f2746abd05"
   name = "github.com/mitchellh/go-homedir"
@@ -221,7 +252,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:99a20dcba543e01a36100ff91ada8309ce4a20293339fe5b29345d308967be75"
+  digest = "1:27ad3c8cf76b8e68166996fa6fc048344f99565d7fd9f403dac3c37d8d5f00af"
   name = "golang.org/x/crypto"
   packages = [
     "cast5",
@@ -240,6 +271,7 @@
     "ssh",
     "ssh/agent",
     "ssh/knownhosts",
+    "ssh/terminal",
   ]
   pruneopts = "UT"
   revision = "027cca12c2d63e3d62b670d901e8a2c95854feec"
@@ -259,9 +291,12 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:9fba31d2a650207a16272732e47b5c0bef19e42e8d6ca33b94e52d0f512bba39"
+  digest = "1:0d0ca6aa81eb65a52a6e128bddf01753daed51c82550ddd9db9822b272f69f72"
   name = "golang.org/x/sys"
-  packages = ["windows"]
+  packages = [
+    "unix",
+    "windows",
+  ]
   pruneopts = "UT"
   revision = "8014b7b116a67fea23fbb82cd834c9ad656ea44b"
 
@@ -359,6 +394,7 @@
     "github.com/docker/docker-credential-helpers/client",
     "github.com/docker/docker/api/types",
     "github.com/docker/docker/client",
+    "github.com/docker/docker/pkg/jsonmessage",
     "github.com/fsouza/go-dockerclient",
     "github.com/pkg/errors",
     "github.com/spf13/cobra",
