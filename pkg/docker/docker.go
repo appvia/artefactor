@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/appvia/artefactor/pkg/hashcache"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/jsonmessage"
 )
 
 type Image struct {
@@ -40,14 +42,21 @@ func Load(file string) error {
 		return err
 	}
 	defer response.Body.Close()
-
 	if response.Body != nil && response.JSON {
-		// Decode messages until complete...?
 		b, err := ioutil.ReadAll(response.Body)
 		if err != nil {
 			return fmt.Errorf("error reading response from docker daemon:%s", err)
 		}
+		var apiMessage jsonmessage.JSONMessage
+		if err := json.Unmarshal(b, &apiMessage); err != nil {
+			return fmt.Errorf("error decoding response from docker daemon:%s", err)
+		}
+		if apiMessage.Error != nil {
+			return fmt.Errorf("error loading image: %s", apiMessage.Error.Message)
+		}
 		log.Printf(string(b))
+	} else {
+		return fmt.Errorf("empty/invalid response from docker daemon")
 	}
 	return nil
 }
