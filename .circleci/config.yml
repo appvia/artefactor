@@ -10,6 +10,12 @@ jobs:
       - run: make test
       - run: make src
 
+  docker_build:
+    machine: true
+    steps:
+     - checkout
+     - run: make docker_build
+
   release:
     docker:
       - image: circleci/golang:1.10
@@ -21,12 +27,28 @@ jobs:
       - run: git config --global user.name lewismarshall
       - run: ghr $CIRCLE_TAG ./bin/
 
+  docker_release:
+    machine: true
+    steps:
+     - checkout
+     # with credentials stored in the UI
+     - run: docker login -u $QUAY_USERNAME -p $QUAY_PASSWORD
+     - run: make docker_build
+     - run: make docker_push
+
 workflows:
   version: 2
   run_release:
     jobs:
       - build
+      - docker_build
       - release:
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
+      - docker_release:
           filters:
             tags:
               only: /^v.*/

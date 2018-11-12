@@ -1,5 +1,6 @@
 NAME=artefactor
 AUTHOR=appvia
+CONTAINER ?= quay.io/${AUTHOR}/${NAME}
 AUTHOR_EMAIL=lewis.marshall@appvia.io
 BINARY ?= ${NAME}
 ROOT_DIR=${PWD}
@@ -15,8 +16,8 @@ GOFILES_NOVENDOR=$(shell find . -type f -name '*.go' -not -path "./vendor/*")
 VERSION_PKG=$(shell go list ./pkg/version)
 LFLAGS ?= -X ${VERSION_PKG}.gitVersion=${GIT_VERSION} -X ${VERSION_PKG}.gitSha=${GIT_SHA}
 VETARGS ?= -asmdecl -atomic -bool -buildtags -copylocks -methods -nilfunc -printf -rangeloops -structtags -unsafeptr
-PLATFORMS=darwin linux windows
-ARCHITECTURES=386 amd64
+PLATFORMS ?= darwin linux windows
+ARCHITECTURES ?= 386 amd64
 
 .PHONY: test authors changelog build release lint cover vet
 
@@ -36,6 +37,14 @@ release: clean deps release-deps
 	mkdir -p bin
 	CGO_ENABLED=0 gox -arch="${ARCHITECTURES}" -os="${PLATFORMS}" -ldflags "-w ${LFLAGS}" -output=./bin/{{.Dir}}_{{.OS}}_{{.Arch}} ./...
 	cd ./bin && sha256sum * > checksum.txt && cd -
+
+docker_build:
+	@echo "--> Creating a container"
+	docker build . -t ${CONTAINER}:${VERSION}
+
+docker_push:
+	@echo "--> Pushing container"
+	docker push ${CONTAINER}:${VERSION}
 
 clean:
 	rm -rf ./bin 2>/dev/null
