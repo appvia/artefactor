@@ -73,7 +73,7 @@ images. In this case, the flag `--image-vars`
 MYSQL_IMAGE=mysql:v5.0
 CASSANDRA_IMAGE=docker.io/cassandra:latest
 ARTEFACTOR_IMAGE_VARS="MYSQL_IMAGE CASSANDRA_IMAGE"
-ARTEFACTOR_PRIVATE_REGISTRY=myreg.local
+ARTEFACTOR_DOCKER_REGISTRY=myreg.local
 
 artefactor save
 ```
@@ -108,7 +108,7 @@ Given the following exported shell variables:
 export MYSQL_IMAGE=mysql:v5.0
 export CASSANDRA_IMAGE=docker.io/cassandra:latest
 export ARTEFACTOR_IMAGE_VARS="MYSQL_IMAGE CASSANDRA_IMAGE"
-export ARTEFACTOR_PRIVATE_REGISTRY=myreg.local
+export ARTEFACTOR_DOCKER_REGISTRY=myreg.local
 ```
 
 To safely update environment variables with a list of images (as discovered from the
