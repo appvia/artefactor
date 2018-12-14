@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -104,6 +105,25 @@ func save(c *cobra.Command) error {
 		webFiles = append(webFiles, w)
 	}
 
+	// validate all git repo's exists and are clean
+	gitRepos := strings.Fields(c.Flag(FlagGitRepos).Value.String())
+	for _, repo := range gitRepos {
+		if isclean, err := git.IsClean(repo); err != nil && !isclean {
+			if err != nil {
+				return fmt.Errorf(
+					"unable to check git repo %s:%s",
+					repo,
+					err)
+			}
+			return fmt.Errorf(
+				"git repo %s is not clean - refusing to continue",
+				repo)
+		}
+	}
+
+	// validate docker images
+	images := getImages(c)
+
 	// Now make changes
 	if _, err := os.Stat(saveDir); os.IsNotExist(err) {
 		// Create the downloads folder
@@ -135,7 +155,6 @@ func save(c *cobra.Command) error {
 	}
 
 	// save any git repos
-	gitRepos := strings.Fields(c.Flag(FlagGitRepos).Value.String())
 	for _, repo := range gitRepos {
 		fmt.Printf("\nSaving git repos\n")
 		if err := git.Archive(hc, repo, saveDir); err != nil {
@@ -148,7 +167,6 @@ func save(c *cobra.Command) error {
 	}
 
 	// save docker images
-	images := getImages(c)
 	for _, image := range images {
 		fmt.Printf("\nSaving docker images\n")
 		if err := docker.Save(hc, image, saveDir, getCredsFromFlags(c)); err != nil {
@@ -186,6 +204,7 @@ func getImages(c *cobra.Command) []string {
 	for _, varName := range imageVars {
 		newImage := os.Getenv(varName)
 		if !contains(images, newImage) {
+			log.Printf("docker image:'%s'", newImage)
 			images = append(images, newImage)
 		}
 	}

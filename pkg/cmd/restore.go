@@ -100,6 +100,19 @@ func RestoreHome(gitRepoFile string, dst string, savedDir string) error {
 		refresh = true
 	}
 
+	// Add check for clean destination git repo...
+	if refresh {
+		clean, err := git.IsClean(repoPath)
+		if err != nil {
+			return fmt.Errorf("can't read git repo at %s:%s", repoPath, err)
+		}
+		if !clean {
+			return fmt.Errorf(
+				"destination repo is NOT clean, please clean then restore (%s)",
+				repoPath)
+		}
+	}
+
 	var missingFiles []string
 	// Verify if we have everything we need BEFORE moving files
 	// Check we have all files in source OR destination BEFORE we start to copy...
@@ -107,6 +120,7 @@ func RestoreHome(gitRepoFile string, dst string, savedDir string) error {
 	if err != nil {
 		return fmt.Errorf("problem with checksum file in folder %s:%s", src, err)
 	}
+
 	log.Printf("items in cache %v", len(srcChk.CheckSumsByFilePath))
 	for _, item := range srcChk.CheckSumsByFilePath {
 		// Only worry if the file refered from the checksum file doesn't exist
@@ -142,22 +156,10 @@ func RestoreHome(gitRepoFile string, dst string, savedDir string) error {
 			fmt.Printf("  %s\n", file)
 		}
 		return fmt.Errorf(
-			"files in checksum file %s not present in source %s or destination %s\n",
+			"files in checksum file %s not present in source %s or destination %s",
 			srcChk.CheckSumFile,
 			src,
 			dstDir)
-	}
-	// Add check for clean destination git repo...
-	if refresh {
-		clean, err := git.IsClean(repoPath)
-		if err != nil {
-			return fmt.Errorf("can't read git repo at %s:%s", repoPath, err)
-		}
-		if !clean {
-			return fmt.Errorf(
-				"destination repo is NOT clean, please clean then restore (%s)",
-				repoPath)
-		}
 	}
 
 	// Pre-flight checks OK...
