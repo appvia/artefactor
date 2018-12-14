@@ -3,7 +3,9 @@ package util
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
+	"os/exec"
 
 	"github.com/appvia/artefactor/pkg/hashcache"
 )
@@ -59,4 +61,20 @@ func BinMark(c *hashcache.CheckSumCache, download string) error {
 	os.Create(binMark)
 	_, err := c.Update(binMark)
 	return err
+}
+
+// SymLink can create links even when golang cannot
+func SymLink(linkFile, destination string) error {
+	cmd := exec.Command("ln", "-s", destination, linkFile)
+	log.Printf("About to run %s", cmd.Args)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf(
+			"error running '%s':%s",
+			cmd.Args,
+			err)
+	}
+	return nil
 }
