@@ -8,6 +8,8 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/appvia/artefactor/pkg/util"
 )
 
 // Create a tar file from file name and array of paths and files to add
@@ -99,6 +101,22 @@ func Extract(tarFn string, dst string) error {
 				}
 			}
 
+		case tar.TypeLink:
+			dir := filepath.Dir(target)
+			dest := header.Linkname
+			log.Printf("link dir %s file name: %s links to %s", dir, target, dest)
+			// Check the path exists first
+			if _, err := os.Stat(dir); err != nil {
+				if err := os.MkdirAll(dir, 0775); err != nil {
+					return err
+				}
+			}
+			// Destination may not exist until all of tar is extracted
+			// os.Symlink cannot create symlink when destination doesn't exists!!!???
+			if err := util.SymLink(target, dest); err != nil {
+				return err
+			}
+
 		// if it's a file create it
 		case tar.TypeReg:
 			dir := filepath.Dir(target)
@@ -131,13 +149,19 @@ func addFile(
 	path string) error {
 
 	// Ensure path exists
-	fi, err := os.Stat(path)
+	fi, err := os.Lstat(path)
 	if err != nil {
 		return err
 	}
 	header, err := tar.FileInfoHeader(fi, path)
 	if err != nil {
 		return err
+	}
+	if len(header.Linkname) > 0 {
+		log.Printf("adding link:%s to %s", header.Linkname, header.Name)
+		header.Typeflag = tar.TypeLink
+		// Link name isn't right - let's make sure it contains the path
+		header.Linkname, _ = os.Readlink(path)
 	}
 	// update the name to correctly reflect the desired destination when untaring
 	if len(prefix) > 0 {
