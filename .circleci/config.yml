@@ -3,10 +3,14 @@ jobs:
   build:
     docker:
       # specify the version
-      - image: circleci/golang:1.10
+      - image: circleci/golang:1.12
+    environment:
+      GO111MODULE: "on"
+
     working_directory: /go/src/github.com/appvia/artefactor
     steps:
       - checkout
+      - run: go get -v -d ./...
       - run: make test
       - run: make src
 
@@ -18,7 +22,9 @@ jobs:
 
   release:
     docker:
-      - image: circleci/golang:1.10
+      - image: circleci/golang:1.12
+    environment:
+      GO111MODULE: "on"
     working_directory: /go/src/github.com/appvia/artefactor
     steps:
       - checkout

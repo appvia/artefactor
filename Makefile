@@ -10,18 +10,17 @@ GIT_SHA=$(shell git rev-parse HEAD)
 GOVERSION=1.10
 BUILD_TIME=$(shell date -u '+%Y-%m-%d_%I:%M:%S%p')
 VERSION ?= ${GIT_VERSION}
-DEPS=$(shell go list -f '{{range .TestImports}}{{.}} {{end}}' ./...)
 PACKAGES=$(shell go list ./...)
 GOFILES_NOVENDOR=$(shell find . -type f -name '*.go' -not -path "./vendor/*")
 VERSION_PKG=$(shell go list ./pkg/version)
 LFLAGS ?= -X ${VERSION_PKG}.gitVersion=${GIT_VERSION} -X ${VERSION_PKG}.gitSha=${GIT_SHA}
-VETARGS ?= -asmdecl -atomic -bool -buildtags -copylocks -methods -nilfunc -printf -rangeloops -structtags -unsafeptr
-PLATFORMS ?= darwin linux windows
+VETARGS ?= -asmdecl -atomic -bool -buildtags -copylocks -methods -nilfunc -printf -rangeloops -unsafeptr
+PLATFORMS ?= darwin linux
 ARCHITECTURES ?= 386 amd64
 
 .PHONY: test authors changelog build release lint cover vet
 
-default: deps build
+default: build
 
 golang:
 	@echo "--> Go Version"
@@ -32,7 +31,7 @@ build:
 	mkdir -p bin
 	CGO_ENABLED=0 go build -ldflags "${LFLAGS}" -o bin/${NAME} cmd/artefactor/*.go
 
-release: clean deps release-deps
+release: clean release-deps
 	@echo "--> Compiling all the static binaries"
 	mkdir -p bin
 	CGO_ENABLED=0 gox -arch="${ARCHITECTURES}" -os="${PLATFORMS}" -ldflags "-w ${LFLAGS}" -output=./bin/{{.Dir}}_{{.OS}}_{{.Arch}} ./...
@@ -53,18 +52,10 @@ authors:
 	@echo "--> Updating the AUTHORS"
 	git log --format='%aN <%aE>' | sort -u > AUTHORS
 
-dep-install:
-	@echo "--> Retrieving dependencies"
-	@dep ensure
 
 release-deps:
 	@echo "--> Installing release dependencies"
 	@go get -u github.com/mitchellh/gox
-
-deps:
-	@echo "--> Installing build dependencies"
-	@go get -u github.com/golang/dep/cmd/dep
-	$(MAKE) dep-install
 
 vet:
 	@echo "--> Running go vet $(VETARGS) ."
@@ -76,7 +67,7 @@ vet:
 lint:
 	@echo "--> Running golint"
 	@which golint 2>/dev/null ; if [ $$? -eq 1 ]; then \
-		go get -u github.com/golang/lint/golint; \
+		go get -u golang.org/x/lint/golint; \
 	fi
 	@golint .
 
@@ -98,7 +89,7 @@ bench:
 
 coverage:
 	@echo "--> Running go coverage"
-	@go test -coverprofile cover.out
+	@go test -cover $(PACKAGES) -coverprofile cover.out
 	@go tool cover -html=cover.out -o cover.html
 
 cover:
@@ -107,9 +98,6 @@ cover:
 
 test:
 	@echo "--> Running the tests"
-	  @if [ ! -d "vendor" ]; then \
-    make dep-install; \
-  fi
 	@go test -v ${PACKAGES}
 	@$(MAKE) cover
 
