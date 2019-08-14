@@ -25,7 +25,7 @@ type PushEvent struct {
 // Push will push a docker image
 func Push(image string, creds *util.Creds) error {
 	ctx := context.Background()
-	cli, err := client.NewEnvClient()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return (err)
 	}

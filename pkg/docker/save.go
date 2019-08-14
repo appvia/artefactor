@@ -44,7 +44,7 @@ func Save(c *hashcache.CheckSumCache, image string, dir string, creds *util.Cred
 	}
 
 	ctx := context.Background()
-	cli, err := client.NewEnvClient()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return (err)
 	}
