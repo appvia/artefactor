@@ -1,3 +1,5 @@
 /bin
 /downloads
 /vendor
+.idea
+.vscode
