@@ -7,27 +7,32 @@ import (
 )
 
 const (
-	safePathSep string = "~"
-	safeVerSep  string = "~~"
-	Ext         string = ".docker.tar"
+	safePathSep  string = "~"
+	safeVerSep   string = "~~"
+	safeShaIdent string = "~~~sha256~"
+	Ext          string = ".docker.tar"
 )
 
 // ImageToFileName provides an archived name from a docker image name
 func ImageToFilePath(imageName string, dir string) (fileName string, err error) {
-	flatImageName := strings.Replace(imageName, string(os.PathSeparator), safePathSep, -1)
-	flatImageName = strings.Replace(flatImageName, ":", safeVerSep, 1)
+	imageName = strings.Replace(imageName, "@sha256:", safeShaIdent, 1)
+	imageName = strings.Replace(imageName, string(os.PathSeparator), safePathSep, -1)
+	imageName = strings.Replace(imageName, ":", safeVerSep, 1)
+
 	if len(dir) > 0 {
-		flatImageName = dir + string(os.PathSeparator) + flatImageName + Ext
+		imageName = dir + string(os.PathSeparator) + imageName + Ext
 	} else {
-		flatImageName = flatImageName + Ext
+		imageName = imageName + Ext
 	}
-	return flatImageName, nil
+	return imageName, nil
 }
 
 // FileNameToImageName converts an archived file name back to the origonal docker image name
 func FilePathToImageName(fileName string) (imageName string, err error) {
 	// obtain the image name portion of the path
 	imageName = filepath.Base(fileName)
+	// Decode addressable content sha identifiers
+	imageName = strings.Replace(imageName, safeShaIdent, "@sha256:", -1)
 	// Decode version seperator
 	imageName = strings.Replace(imageName, safeVerSep, ":", 1)
 	// Decode registry path

@@ -18,6 +18,8 @@ func TestImageToFilePath(t *testing.T) {
 		{"dns.registry/alpine:latest", "dns.registry~alpine~~latest.docker.tar", ""},
 		{"dns.registry/alpine:latest", "dns.registry~alpine~~latest.docker.tar", ""},
 		{"alpine", "dir/alpine.docker.tar", "dir"},
+		{"busybox@sha256:9f1003c480699be56815db0f8146ad2e22efea85129b5b5983d0e0fb52d9ab70", "busybox~~~sha256~9f1003c480699be56815db0f8146ad2e22efea85129b5b5983d0e0fb52d9ab70.docker.tar", ""},
+		{"dns.registry/busybox@sha256:9f1003c480699be56815db0f8146ad2e22efea85129b5b5983d0e0fb52d9ab70", "dns.registry~busybox~~~sha256~9f1003c480699be56815db0f8146ad2e22efea85129b5b5983d0e0fb52d9ab70.docker.tar", ""},
 	}
 
 	for _, image := range images {
@@ -50,7 +52,8 @@ func TestFilePathToImageName(t *testing.T) {
 		{"dns.registry~alpine~~latest.docker.tar", "dns.registry/alpine:latest"},
 		{"dns.registry~alpine~~latest.docker.tar", "dns.registry/alpine:latest"},
 		{"dir/alpine.docker.tar", "alpine"},
-	}
+		{"busybox~~~sha256~9f1003c480699be56815db0f8146ad2e22efea85129b5b5983d0e0fb52d9ab70.docker.tar", "busybox@sha256:9f1003c480699be56815db0f8146ad2e22efea85129b5b5983d0e0fb52d9ab70"},
+		{"dns.registry~busybox~~~sha256~9f1003c480699be56815db0f8146ad2e22efea85129b5b5983d0e0fb52d9ab70.docker.tar", "dns.registry/busybox@sha256:9f1003c480699be56815db0f8146ad2e22efea85129b5b5983d0e0fb52d9ab70"}}
 	for _, file := range files {
 		imageName, err := FilePathToImageName(file.path)
 		if err != nil {
