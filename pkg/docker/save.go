@@ -48,6 +48,7 @@ func Save(c *hashcache.CheckSumCache, image string, dir string, creds *util.Cred
 	if err != nil {
 		return (err)
 	}
+
 	// Load auth details from .docker config
 	var ipo types.ImagePullOptions
 	if creds != nil {
@@ -60,6 +61,7 @@ func Save(c *hashcache.CheckSumCache, image string, dir string, creds *util.Cred
 	} else {
 		ipo.RegistryAuth = GetAuth(image)
 	}
+
 	events, err := cli.ImagePull(ctx, image, ipo)
 	if err != nil {
 		return (err)
@@ -97,10 +99,10 @@ func Save(c *hashcache.CheckSumCache, image string, dir string, creds *util.Cred
 	fmt.Printf("Saving to archive:%+v\n", archiveFile)
 	outFile, err := os.Create(archiveFile)
 	// handle err
-	defer outFile.Close()
 	if err != nil {
 		return err
 	}
+	defer outFile.Close()
 	_, err = io.Copy(outFile, ior)
 	if err != nil {
 		return err
