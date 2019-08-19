@@ -11,7 +11,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/appvia/artefactor/pkg/hashcache"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/jsonmessage"
 )
@@ -65,7 +64,7 @@ func Load(image *Image) error {
 			// this gives us the basis of a tag to retag it with also.
 			re := regexp.MustCompile(`sha256:([0-9a-f]{64})`)
 			image.ImageID = re.FindString(string(b))
-			log.Printf("Added %s to image object with repodigest %s\n", image.ImageID, image.RepoDigest)
+			log.Printf("Added %s to image object with repodigest %s", image.ImageID, image.RepoDigest)
 		}
 		log.Print(string(b))
 	} else {
@@ -120,33 +119,45 @@ func ValidatePublishedRepoDigest(image Image) error {
 }
 
 // GetImages retireves a list of image structs
-func GetImages(path string, registry string) ([]Image, error) {
+func GetImages(files []string, registry string) ([]Image, error) {
 	images := []Image{}
-	files := hashcache.GetFiles(path)
 	for _, file := range files {
 		if strings.HasSuffix(file, Ext) {
-			imageName, err := FilePathToImageName(file)
-			fullImgName := StripRepoDigest(imageName)
-			bareImageName := StripImageTag(fullImgName)
+			image, err := NewImageFromFilePath(file, registry)
 			if err != nil {
-				return nil, err
+				fmt.Printf("Error processing docker image from file %s, skipping: %s\n", file, err)
+			} else {
+				log.Printf("Appending image: %#v", image)
+				images = append(images, image)
 			}
-			tmpimage := Image{
-				FileName:     file,
-				ImageName:    bareImageName,
-				ImageTag:     GetImageTag(fullImgName),
-				NewImageName: GetNewImageName(bareImageName, registry),
-				RepoDigest:   GetRepoDigest(imageName),
-			}
-			images = append(images, tmpimage)
 		}
 	}
 	return images, nil
 }
 
+func NewImageFromFilePath(file string, registry string) (Image, error) {
+	imageName, err := FilePathToImageName(file)
+	if err != nil {
+		return Image{}, err
+	}
+	fullImgName := StripRepoDigest(imageName)
+	bareImageName := StripImageTag(fullImgName)
+
+	image := Image{
+		FileName:     file,
+		ImageName:    bareImageName,
+		ImageTag:     GetImageTag(fullImgName),
+		NewImageName: GetNewImageName(bareImageName, registry),
+		RepoDigest:   GetRepoDigest(imageName),
+	}
+	return image, nil
+}
+
 func GetNewImageName(image string, registry string) string {
-	newImage := fmt.Sprintf("%s/%s", registry, filepath.Base(image))
-	return newImage
+	if registry != "" {
+		image = fmt.Sprintf("%s/%s", registry, filepath.Base(image))
+	}
+	return image
 }
 
 func GetImageTag(image string) string {

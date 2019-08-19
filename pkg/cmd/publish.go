@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/appvia/artefactor/pkg/docker"
+	"github.com/appvia/artefactor/pkg/hashcache"
 	"github.com/spf13/cobra"
 )
 
@@ -61,7 +62,8 @@ func publish(c *cobra.Command) error {
 	}
 	// get the registry (if specified)
 	registry := c.Flag(FlagDockerRegistry).Value.String()
-	images, err := docker.GetImages(src, registry)
+	files := hashcache.GetFiles(src)
+	images, err := docker.GetImages(files, registry)
 	if err != nil {
 		return fmt.Errorf(
 			"problem getting a list of images from file names in %s:%s", src, err)
