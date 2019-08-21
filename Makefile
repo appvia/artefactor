@@ -60,14 +60,14 @@ release-deps:
 vet:
 	@echo "--> Running go vet $(VETARGS) ."
 	@go tool vet 2>/dev/null ; if [ $$? -eq 3 ]; then \
-		go get golang.org/x/tools/cmd/vet; \
+		GO111MODULE=off go get golang.org/x/tools/cmd/vet; \
 	fi
 	@go vet $(VETARGS) $(PACKAGES)
 
 lint:
 	@echo "--> Running golint"
 	@which golint 2>/dev/null ; if [ $$? -eq 1 ]; then \
-		go get -u golang.org/x/lint/golint; \
+		GO111MODULE=off go get -u golang.org/x/lint/golint; \
 	fi
 	@golint .
 

@@ -36,7 +36,7 @@ func init() {
 		imageNamesCmd,
 		FlagImageVars,
 		"",
-		"the whitelist separated list of variables specifying orininal image names")
+		"the whitelist separated list of variables specifying original image names")
 
 	addFlagWithEnvDefault(
 		imageNamesCmd,

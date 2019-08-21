@@ -123,7 +123,7 @@ func RestoreHome(gitRepoFile string, dst string, savedDir string) error {
 
 	log.Printf("items in cache %v", len(srcChk.CheckSumsByFilePath))
 	for _, item := range srcChk.CheckSumsByFilePath {
-		// Only worry if the file refered from the checksum file doesn't exist
+		// Only worry if the file referred from the checksum file doesn't exist
 		if _, err := os.Stat(item.FilePath); err == nil {
 			log.Printf("file present in cache and disk %s", item.FilePath)
 		} else {
@@ -145,7 +145,10 @@ func RestoreHome(gitRepoFile string, dst string, savedDir string) error {
 					fmt.Printf(
 						"Checking existing file (no update provided) %s\n",
 						dstFile)
-					calcAndCheckSum(dstFile)
+					err := calcAndCheckSum(dstFile)
+					if err != nil {
+						return err
+					}
 				}
 			}
 		}
@@ -179,11 +182,13 @@ func RestoreHome(gitRepoFile string, dst string, savedDir string) error {
 				dstDir,
 				err)
 		}
+	} else {
+		if err != nil {
+			return fmt.Errorf("cannot read checksum file from %s:%s", dstDir, err)
+		}
 	}
 	// Ensure we have a checksum file in the destination first...
-	if err != nil {
-		return fmt.Errorf("cannot read checksum file from %s:%s", dstDir, err)
-	}
+
 	// Now move all the files, checking checksums as we go...
 	for srcFile, chkItem := range srcChk.CheckSumsByFilePath {
 		dstFile := filepath.Join(dstDir, chkItem.FileName)
@@ -194,7 +199,10 @@ func RestoreHome(gitRepoFile string, dst string, savedDir string) error {
 			if err := util.Mv(srcFile, dstFile); err != nil {
 				return err
 			}
-			calcAndCheckSum(dstFile)
+			err := calcAndCheckSum(dstFile)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	dstChkFile := filepath.Join(dstDir, hashcache.DefaultCheckSumFileName)
@@ -226,7 +234,7 @@ func calcAndCheckSum(file string) error {
 	if err != nil {
 		return err
 	}
-	log.Printf(calcHash)
+	log.Print(calcHash)
 	if dstChk.IsCachedMatched(file, calcHash) {
 		fmt.Printf("OK\n")
 	} else {

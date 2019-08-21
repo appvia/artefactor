@@ -86,7 +86,7 @@ artefactor save
 
 *Common Flags:*
 
-To restore a set of artefacter saved files from a home directory to the current
+To restore a set of artefactor saved files from a home directory to the current
 working directory:
 ```
 artefactor restore --source-dir ~/

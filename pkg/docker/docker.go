@@ -24,7 +24,7 @@ type Image struct {
 	RepoDigest   string
 }
 
-// Load a conatiner from archive and return the image name
+// Load a container from archive and return the image name
 func Load(image *Image) error {
 
 	if _, err := os.Stat(image.FileName); err != nil {
@@ -59,12 +59,12 @@ func Load(image *Image) error {
 			return fmt.Errorf("error loading image: %s", apiMessage.Error.Message)
 		}
 		if image.RepoDigest != "" {
-			// if this is an image being restored from a repodigest address, we need
-			// to suppliment the image object with the imageID docker has imported it as.
-			// this gives us the basis of a tag to retag it with also.
+			// if this is an image being restored from a repoDigest address, we need
+			// to supplement the image object with the imageID docker has imported it as.
+			// this gives us the basis of a tag to re-tag it with also.
 			re := regexp.MustCompile(`sha256:([0-9a-f]{64})`)
 			image.ImageID = re.FindString(string(b))
-			log.Printf("Added %s to image object with repodigest %s", image.ImageID, image.RepoDigest)
+			log.Printf("Added %s to image object with repoDigest %s", image.ImageID, image.RepoDigest)
 		}
 		log.Print(string(b))
 	} else {
@@ -85,7 +85,7 @@ func ReTag(image *Image) error {
 	}
 	imageRef := ""
 	if image.RepoDigest != "" {
-		//a sha256 repodigest will have loaded a blank image repo name and blank tag
+		//a sha256 repoDigest will have loaded a blank image repo name and blank tag
 		//so we must refer to the image with the ImageID
 		imageRef = image.ImageID
 	} else {
@@ -95,30 +95,41 @@ func ReTag(image *Image) error {
 	return err
 }
 
-func ValidatePublishedRepoDigest(image Image) error {
+//Check if the docker recorded repoDigest matches Image struct repoDigest
+func ValidatePublishedRepoDigestMatchesHashcache(image Image) error {
+	//find recorded repoDigest
+	repoDigests, err := getClientRepoDigests(image.ImageID)
+	if err != nil {
+		return err
+	}
+	for i, n := range repoDigests {
+		if image.NewImageName+"@sha256:"+image.RepoDigest == n {
+			log.Printf("RepoDigest %s matches digest [#%s]: %v", image.RepoDigest, n, i)
+			return nil
+		}
+	}
+	log.Printf("RepoDigest %s did not match any digests in %#v\n",
+		image.RepoDigest,
+		repoDigests)
+	return fmt.Errorf("No repo digests matched %s", image.RepoDigest)
+}
+
+func getClientRepoDigests(imageID string) ([]string, error) {
 	//find recorded repoDigest
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	ii, rawresp, err := cli.ImageInspectWithRaw(ctx, image.ImageID)
+	ii, rawresp, err := cli.ImageInspectWithRaw(ctx, imageID)
 	if err != nil {
-		log.Print(string(rawresp))
-		return err
+		log.Printf("imageInspectWithRaw response: %s", string(rawresp))
+		return nil, err
 	}
-	for i, n := range ii.RepoDigests {
-		if image.NewImageName+"@sha256:"+image.RepoDigest == n {
-			log.Printf("RepoDigest %s matches %v", image.RepoDigest, ii.RepoDigests[i])
-			return nil
-		}
-	}
-
-	return nil
+	return ii.RepoDigests, nil
 }
 
-// GetImages retireves a list of image structs
+// GetImages retrieves an image struct array
 func GetImages(files []string, registry string) ([]Image, error) {
 	images := []Image{}
 	for _, file := range files {
