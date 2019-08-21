@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/appvia/artefactor/pkg/docker"
+	"github.com/appvia/artefactor/pkg/hashcache"
 	"github.com/spf13/cobra"
 )
 
@@ -61,7 +62,8 @@ func publish(c *cobra.Command) error {
 	}
 	// get the registry (if specified)
 	registry := c.Flag(FlagDockerRegistry).Value.String()
-	images, err := docker.GetImages(src, registry)
+	files := hashcache.GetFiles(src)
+	images, err := docker.GetImages(files, registry)
 	if err != nil {
 		return fmt.Errorf(
 			"problem getting a list of images from file names in %s:%s", src, err)
@@ -72,28 +74,36 @@ func publish(c *cobra.Command) error {
 			return fmt.Errorf("must specify registry for publish")
 		}
 	} else {
-		fmt.Printf("No images to publish.\n")
+		fmt.Printf("No images to publish\n")
 	}
 	for _, image := range images {
-		fmt.Printf("Loading image from %s.\n", image.FileName)
-		if err := docker.Load(image.FileName); err != nil {
+		fmt.Printf("Loading image from %s\n", image.FileName)
+		if err := docker.Load(&image); err != nil {
 			return fmt.Errorf("load image problem for %s:%s", image.FileName, err)
 		}
-		fmt.Printf("ReTagging image as %s.\n", image.NewImageName)
-		if err := docker.ReTag(image); err != nil {
+		fmt.Printf("ReTagging image as %s\n", image.NewImageName+":"+image.ImageTag)
+		if err := docker.ReTag(&image); err != nil {
 			return fmt.Errorf(
 				"problem retagging %s to %s:%s",
 				image.ImageName,
-				image.NewImageName, err)
+				image.NewImageName+":"+image.ImageTag, err)
 		}
-		fmt.Printf("pushing image %s\n", image.NewImageName)
-		if err := docker.Push(image.NewImageName, getCredsFromFlags(c)); err != nil {
+		fmt.Printf("pushing image %s\n", image.NewImageName+":"+image.ImageTag)
+		if err := docker.Push(image.NewImageName+":"+image.ImageTag, getCredsFromFlags(c)); err != nil {
 			return fmt.Errorf(
-				"problem pushing image %s to registry:%s",
-				image.NewImageName,
+				"problem pushing image %s to registry: %s",
+				image.NewImageName+":"+image.ImageTag,
 				err)
 		}
-		fmt.Printf("  Pushed.\n")
+		fmt.Printf("Pushed image %s successfully.\n", image.NewImageName+":"+image.ImageTag)
+		if image.RepoDigest != "" {
+			// validate the repodigest matches
+			err := docker.ValidatePublishedRepoDigest(image)
+			if err != nil {
+				return fmt.Errorf("There was a problem verifying the %s image's RepoDigest after it was uploaded to the regsitry: %s", image.NewImageName+":"+image.ImageTag, err)
+			}
+		}
+		fmt.Printf("Verified image %s repodigest %s matches published digest.\n", image.NewImageName+":"+image.ImageTag, image.RepoDigest)
 	}
 	return nil
 }
