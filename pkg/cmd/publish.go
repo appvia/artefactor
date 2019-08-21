@@ -100,7 +100,7 @@ func publish(c *cobra.Command) error {
 			// validate the repodigest matches
 			err := docker.ValidatePublishedRepoDigest(image)
 			if err != nil {
-				return fmt.Errorf("There was a problem verifying the %s image's RepoDigest after it was uploaded to the regsitry: %s", image.NewImageName+":"+image.ImageTag, err)
+				return fmt.Errorf("There was a problem verifying the %s image's RepoDigest after it was uploaded to the registry: %s", image.NewImageName+":"+image.ImageTag, err)
 			}
 		}
 		fmt.Printf("Verified image %s repodigest %s matches published digest.\n", image.NewImageName+":"+image.ImageTag, image.RepoDigest)
