@@ -55,7 +55,7 @@ authors:
 
 release-deps:
 	@echo "--> Installing release dependencies"
-	@go get -u github.com/mitchellh/gox
+	@GO111MODULE=off go get -u github.com/mitchellh/gox
 
 vet:
 	@echo "--> Running go vet $(VETARGS) ."
