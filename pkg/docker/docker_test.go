@@ -134,6 +134,4 @@ func TestNewImageFromFilePath(t *testing.T) {
 			assert.Assert(t, cmp.Equal(actual, tc.expImage))
 		})
 	}
-
-	// {"dns.registry~busybox~~~sha256~9f1003c480699be56815db0f8146ad2e22efea85129b5b5983d0e0fb52d9ab70.docker.tar", "dns.registry/busybox@sha256:9f1003c480699be56815db0f8146ad2e22efea85129b5b5983d0e0fb52d9ab70"}
 }
