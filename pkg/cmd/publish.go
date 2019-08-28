@@ -96,20 +96,6 @@ func publish(c *cobra.Command) error {
 				err)
 		}
 		fmt.Printf("Pushed image %s successfully.\n", image.NewImageName+":"+image.ImageTag)
-
-		// Verifying if the image repoDigest matches the new repoDigest for the newly published
-		// image is not much good since differnet distributions of registries generate different
-		// repoDigests
-
-		// if image.RepoDigest != "" {
-		// 	// validate the repoDigest matches
-		// 	err := docker.ValidatePublishedRepoDigestMatchesHashcache(image)
-		// 	if err != nil {
-		// 		return fmt.Errorf("There was a problem verifying the %s image's RepoDigest after it was uploaded to the registry: %s", image.NewImageName+":"+image.ImageTag, err)
-		// 	}
-		//  fmt.Printf("Verified image %s repoDigest %s matches published digest.\n", image.NewImageName+":"+image.ImageTag, image.RepoDigest)
-		// }
-
 	}
 	return nil
 }

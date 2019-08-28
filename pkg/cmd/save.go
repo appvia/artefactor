@@ -201,8 +201,9 @@ func getImages(c *cobra.Command) []string {
 	images := strings.Fields(c.Flag(FlagDockerImages).Value.String())
 	imageVars := strings.Fields(c.Flag(FlagImageVars).Value.String())
 	for _, varName := range imageVars {
+		log.Printf("image from var: '%s'", varName)
 		newImage := os.Getenv(varName)
-		if !contains(images, newImage) {
+		if !contains(images, newImage) && newImage != "" {
 			log.Printf("docker image:'%s'", newImage)
 			images = append(images, newImage)
 		}

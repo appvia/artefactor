@@ -96,25 +96,40 @@ func ReTag(image *Image) error {
 }
 
 //Check if the docker recorded repoDigest matches Image struct repoDigest
-func ValidatePublishedRepoDigestMatchesHashcache(image Image) error {
+func ValidatePublishedRepoDigestMatchesHashcache(image Image) (bool, error) {
 	//find recorded repoDigest
-	repoDigests, err := getClientRepoDigests(image.ImageID)
+	repoDigests, err := GetClientRepoDigests(image.ImageID)
 	if err != nil {
-		return err
+		return false, err
 	}
 	for i, n := range repoDigests {
 		if image.NewImageName+"@sha256:"+image.RepoDigest == n {
 			log.Printf("RepoDigest %s matches digest [#%s]: %v", image.RepoDigest, n, i)
-			return nil
+			return true, nil
 		}
 	}
 	log.Printf("RepoDigest %s did not match any digests in %#v\n",
 		image.RepoDigest,
 		repoDigests)
-	return fmt.Errorf("No repo digests matched %s", image.RepoDigest)
+	return false, nil
+}
+func GetClientRepoDigestsByRegistry(imageID string, registry string) ([]string, error) {
+	var newRepoDigests []string
+	digests, err := GetClientRepoDigests(imageID)
+	if err != nil {
+		return nil, err
+	}
+	for _, digest := range digests {
+		if strings.HasPrefix(digest, registry) {
+			newRepoDigests = append(newRepoDigests, digest)
+		} else {
+			log.Printf("Discarding repoDigest '%s', does not match requested registry '%s'", digest, registry)
+		}
+	}
+	return newRepoDigests, nil
 }
 
-func getClientRepoDigests(imageID string) ([]string, error) {
+func GetClientRepoDigests(imageID string) ([]string, error) {
 	//find recorded repoDigest
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
@@ -123,7 +138,8 @@ func getClientRepoDigests(imageID string) ([]string, error) {
 	}
 	ii, rawresp, err := cli.ImageInspectWithRaw(ctx, imageID)
 	if err != nil {
-		log.Printf("imageInspectWithRaw response: %s", string(rawresp))
+
+		log.Printf("imageInspectWithRaw response: %s, error: %#v", string(rawresp), err)
 		return nil, err
 	}
 	return ii.RepoDigests, nil
@@ -194,4 +210,7 @@ func GetRepoDigest(image string) string {
 		return strings.Split(image, ShaIdent)[1]
 	}
 	return ""
+}
+func IsClientErrNotFound(err error) bool {
+	return client.IsErrNotFound(err)
 }
