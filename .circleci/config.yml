@@ -2,11 +2,9 @@ version: 2
 jobs:
   build:
     docker:
-      # specify the version
       - image: circleci/golang:1.12
     environment:
       GO111MODULE: "on"
-
     working_directory: /go/src/github.com/appvia/artefactor
     steps:
       - checkout
@@ -19,6 +17,26 @@ jobs:
     steps:
      - checkout
      - run: make docker_build
+  
+  e2e_docker_images_test:
+    # cannot run in docker containers as local file access required by
+    # both artefactor binary and docker daemon.
+    machine:
+      image: ubuntu-1604:201903-01
+    environment:
+      MYSQL_IMAGE: "mysql:5.7.27@sha256:1a121f2e7590f949b9ede7809395f209dd9910e331e8372e6682ba4bebcc020b"
+      ALPINE_IMAGE: "nginx:1-alpine"
+      BUSYBOX_IMAGE: "quay.io/google-containers/busybox:1.27.2@sha256:70892b4c36448ecd9418580da9efa2644c20b4401667db6ae0cf15c0dcdaa595"
+      ARTEFACTOR_IMAGE_VARS: "MYSQL_IMAGE ALPINE_IMAGE BUSYBOX_IMAGE"
+      ARTEFACTOR_DOCKER_REGISTRY: "localhost:5000"
+      GO111MODULE: "on"
+    steps:
+      - checkout
+      - run: make docker_build
+      - run: make docker_get_artefactor_binary
+      - run: ./artefactor save --logs
+      - run: make run_publish_e2e_test
+      - run: ./artefactor update-image-vars --logs
 
   release:
     docker:
@@ -48,6 +66,7 @@ workflows:
     jobs:
       - build
       - docker_build
+      - e2e_docker_images_test
       - release:
           filters:
             tags:

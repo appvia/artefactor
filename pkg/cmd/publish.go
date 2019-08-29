@@ -81,7 +81,6 @@ func publish(c *cobra.Command) error {
 		if err := docker.Load(&image); err != nil {
 			return fmt.Errorf("load image problem for %s:%s", image.FileName, err)
 		}
-		fmt.Printf("ReTagging image as %s\n", image.NewImageName+":"+image.ImageTag)
 		if err := docker.ReTag(&image); err != nil {
 			return fmt.Errorf(
 				"problem re-tagging %s to %s:%s",

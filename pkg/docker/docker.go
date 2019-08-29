@@ -91,6 +91,7 @@ func ReTag(image *Image) error {
 	} else {
 		imageRef = image.ImageName + ":" + image.ImageTag
 	}
+	log.Printf("Re-tagging image ref: %s => %s", imageRef, image.NewImageName+":"+image.ImageTag)
 	err = cli.ImageTag(ctx, imageRef, image.NewImageName+":"+image.ImageTag)
 	return err
 }
@@ -119,9 +120,11 @@ func GetClientRepoDigestsByRegistry(imageID string, registry string) ([]string, 
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("Processing repoDigests for image %s", imageID)
 	for _, digest := range digests {
-		if strings.HasPrefix(digest, registry) {
+		if strings.HasPrefix(digest, registry+"/") {
 			newRepoDigests = append(newRepoDigests, digest)
+			log.Printf("repoDigest '%s' match for requested registry '%s'", digest, registry)
 		} else {
 			log.Printf("Discarding repoDigest '%s', does not match requested registry '%s'", digest, registry)
 		}
