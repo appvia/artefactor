@@ -8,7 +8,7 @@ Artefactor's primary use case is to enable "moving" a git repository and the
 
 - [Details](#details)
 - [Usage](#usage)
-    - [Use in CI/CD](#usage-in-ci)
+  - [Use in CI/CD](#usage-in-ci)
 - [Build](#build)
 - [Roadmap](#roadmap)
 
@@ -16,15 +16,17 @@ Artefactor's primary use case is to enable "moving" a git repository and the
 
 E.g. a git repo for a [kubernetes](https://kubernetes.io/) deployment is 
 specified in a git repo that depends on:
+
 - The git repository files (kubernetes yaml)
 - docker images
 
 Although simple to describe, the steps can be problematic if suitable steps are
 not taken to:
+
 - verify artefacts (checksums)
 - restore files back on remote systems
-    - load / publish container images
-    - set executable bit for tools / restore archives
+  - load / publish container images
+  - set executable bit for tools / restore archives
 - support safe file names for removable media across multiple platforms
 - cache large downloads
 
@@ -44,11 +46,12 @@ Artefacts can be specified as flags or as environment variables with the followi
 | `--docker-images` | docker-image docker-image | A white-space delimited set of docker images | `mysql alpine` |
 | `--image-vars` | `"MYSQL_IMAGE ANOTHER_IMAGE"` | A white-space delimited set of image variable names | Given:</br>`export MYSQL_IMAGE=mysql:v5.0`</br>`export ALPINE_IMAGE=alpine` </br> Use: </br>`"MYSQL_IMAGE ALPINE_IMAGE"`|
 | `--web-files` | url,filename,sha256[,true/false] | A white-space separated list of CSV's in the following format: </br></br>`url` is where to download from</br></br> `filename` is the name to save locally</br></br> `sha256` is the expected checksum</br></br>The optional last parameter specifies if the file should have executable permissions | `https://bit.ly/2ySXztI,kd,2f7...,true https://bit.ly/abc.iso,my.iso,abc...` |
-| `--docker-username` | `usernmame` | A valid docker registry user-name see # | `bob` |
+| `--docker-username` | `username` | A valid docker registry user-name see # | `bob` |
 | `--docker-password` | `testing` | A valid docker registry password | `testing` |
 
 *Common Flags:*
-```
+
+```bash
 artefactor save --git-repos=.\
                 --docker-images="mysql alpine" \
                 --web-files https://github.com/UKHomeOffice/kd/releases/download/v0.13.0/kd_linux_amd64,kd,2f729bb26e225bcf61aa62a03d210f9a238d1c7b1666c1d72964decf7120466a,true
@@ -56,7 +59,7 @@ artefactor save --git-repos=.\
 
 *Environment:*
 
-```
+```bash
 export ARTEFACTOR_DOCKER_IMAGES="mysql
                                  alpine:latest"
 export ARTEFACTOR_WEB_FILES="https://github.com/UKHomeOffice/kd/releases/download/v0.13.0/kd_linux_amd64,kd,2f729bb26e225bcf61aa62a03d210f9a238d1c7b1666c1d72964decf7120466a,true"
@@ -69,7 +72,8 @@ artefactor save
 It is useful to be able to specify a list of variables used for
 images. In this case, the flag `--image-vars`
 (`ARTEFACTOR_IMAGE_VARS`) can be specified directly.
-```
+
+```bash
 MYSQL_IMAGE=mysql:v5.0
 CASSANDRA_IMAGE=docker.io/cassandra:latest
 ARTEFACTOR_IMAGE_VARS="MYSQL_IMAGE CASSANDRA_IMAGE"
@@ -88,7 +92,8 @@ artefactor save
 
 To restore a set of artefactor saved files from a home directory to the current
 working directory:
-```
+
+```bash
 artefactor restore --source-dir ~/
 ```
 
@@ -104,6 +109,7 @@ names. This is useful when environment variables with image names are used in
 deployments and they need to be managed with a private registry name.
 
 Given the following exported shell variables:
+
 ```bash
 export MYSQL_IMAGE=mysql:v5.0
 export CASSANDRA_IMAGE=docker.io/cassandra:latest
@@ -113,13 +119,15 @@ export ARTEFACTOR_DOCKER_REGISTRY=myreg.local
 
 To safely update environment variables with a list of images (as discovered from the
  downloaded artefacts):
-```
+
+```bash
 set -e
 exports=$(artefactor update-image-vars)
 eval "echo ${exports}"
 ```
 
 The sub command will produce the output:
+
 ```bash
 export MYSQL_IMAGE=myreg.local/mysql:v5.0
 export CASSANDRA_IMAGE=myreg.local/cassandra:latest
@@ -129,10 +137,37 @@ export CASSANDRA_IMAGE=myreg.local/cassandra:latest
  variable names white-listed using `ARTEFACTOR_IMAGE_VARS` or the flag
 `--image-vars` will "be exported".
 
+#### Content Adressable Repo Digests
+
+When updating image vars and addressing images using the digest format, eg. `alpine@sha256:6a92cd1fcdc8d8cdec60f33dda4db2cb1fcdcacf3410a8e05b3741f44a9b5998` 
+the `repoDigest` cannot be guaranteed to be the same between registries due to differences in implementations of digest calculation. For this reason, when updating image vars, a local docker instance must have already published the image being updated so a new repoDigest is available and can be updated in the image var.
+for example
+
+```bash
+export ALPINE_IMAGE="alpine@sha256:6a92cd1fcdc8d8cdec60f33dda4db2cb1fcdcacf3410a8e05b3741f44a9b5998"
+export ARTEFACTOR_IMAGE_VARS="ALPINE_IMAGE"
+export ARTEFACTOR_DOCKER_REGISTRY=myreg.local
+set -e 
+exports=$(artefactor update-image-vars)
+eval "echo ${exports}"
+```
+
+the resulting sub command will produce the output similar to:
+
+```bash
+export MYSQL_IMAGE=myreg.local/alpine@sha256:b7b28af77ffec6054d13378df4fdf02725830086c7444d9c278af25312aa39b9
+```
+
+As can be seen the digest sha has changed. This was picked up from the metadata stored in the local docker instance gathered from the push even `artefactor publish` generates.
+
+**Note**: if the image has not been published from the context the `artefactor update-image-vars` command is being run from, the command will fail with an error not being able to find the image details in the local docker instance.
+
 ### Usage in CI
+
 In CI/CD environments the following docker authentication environment variables
 and corresponding flags are supported for both the `save` and `publish` sub commands:
-```
+
+```bash
 export ARTEFACTOR_DOCKER_USERNAME=bob
 export ARTEFACTOR_DOCKER_PASSWORD=testing
 ```
