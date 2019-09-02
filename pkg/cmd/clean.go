@@ -50,7 +50,7 @@ func clean(c *cobra.Command) error {
 
 	allFiles := []string{}
 	// find all the files...
-	filepath.Walk(
+	err = filepath.Walk(
 		saveDir,
 		func(path string, fi os.FileInfo, err error) error {
 			if err != nil {
@@ -60,6 +60,9 @@ func clean(c *cobra.Command) error {
 			allFiles = append(allFiles, path)
 			return nil
 		})
+	if err != nil {
+		return err
+	}
 
 	for _, file := range allFiles {
 		if filepath.Clean(file) == filepath.Clean(saveDir) {

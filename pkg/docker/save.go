@@ -92,8 +92,7 @@ func Save(c *hashcache.CheckSumCache, image string, dir string, creds *util.Cred
 		if err := os.MkdirAll(dir, 0744); err != nil {
 			return err
 		}
-	}
-	if err != nil {
+	} else if err != nil {
 		return err
 	}
 	fmt.Printf("Saving to archive:%+v\n", archiveFile)

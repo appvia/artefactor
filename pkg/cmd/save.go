@@ -54,7 +54,7 @@ func init() {
 		saveCmd,
 		FlagImageVars,
 		"",
-		"the whitelist separated list of variables specifying orininal image names")
+		"the whitelist separated list of variables specifying original image names")
 
 	addFlagWithEnvDefault(
 		saveCmd,
@@ -109,12 +109,11 @@ func save(c *cobra.Command) error {
 	gitRepos := strings.Fields(c.Flag(FlagGitRepos).Value.String())
 	for _, repo := range gitRepos {
 		if isclean, err := git.IsClean(repo); err != nil && !isclean {
-			if err != nil {
-				return fmt.Errorf(
-					"unable to check git repo %s:%s",
-					repo,
-					err)
-			}
+			return fmt.Errorf(
+				"unable to check git repo %s:%s",
+				repo,
+				err)
+		} else if err != nil {
 			return fmt.Errorf(
 				"git repo %s is not clean - refusing to continue",
 				repo)
@@ -202,8 +201,9 @@ func getImages(c *cobra.Command) []string {
 	images := strings.Fields(c.Flag(FlagDockerImages).Value.String())
 	imageVars := strings.Fields(c.Flag(FlagImageVars).Value.String())
 	for _, varName := range imageVars {
+		log.Printf("image from var: '%s'", varName)
 		newImage := os.Getenv(varName)
-		if !contains(images, newImage) {
+		if !contains(images, newImage) && newImage != "" {
 			log.Printf("docker image:'%s'", newImage)
 			images = append(images, newImage)
 		}
@@ -244,7 +244,7 @@ func saveMe(c *hashcache.CheckSumCache, saveDir string, platform string) error {
 
 		tmpDir, err := ioutil.TempDir("", "artefactor_downloads")
 		if err != nil {
-			fmt.Sprintf("problem creating temp dir for artefactor downloads")
+			return fmt.Errorf("problem creating temp dir for artefactor downloads: %s", err)
 		}
 
 		defer os.RemoveAll(tmpDir) // clean up
@@ -279,7 +279,7 @@ func saveMe(c *hashcache.CheckSumCache, saveDir string, platform string) error {
 			}
 		}
 
-		// Finaly move the file to the correct download path:
+		// Finally move the file to the correct download path:
 		if err := util.Mv(tmpBinPath, binaryDst); err != nil {
 			return fmt.Errorf(
 				"unable to move from %s to %s:%s",
@@ -329,7 +329,7 @@ func saveSavedPath(c *hashcache.CheckSumCache, saveDir string) error {
 	return err
 }
 
-// getSavedPath will retireve the saved path from the meta-data file.
+// getSavedPath will retrieve the saved path from the meta-data file.
 func getRelativeSavedPath(srcDir string) (string, error) {
 	b, err := ioutil.ReadFile(filepath.Join(srcDir, SaveDirMetaFile))
 	if err != nil {

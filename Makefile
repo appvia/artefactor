@@ -18,6 +18,13 @@ VETARGS ?= -asmdecl -atomic -bool -buildtags -copylocks -methods -nilfunc -print
 PLATFORMS ?= darwin linux
 ARCHITECTURES ?= 386 amd64
 
+MYSQL_IMAGE ?= mysql:5.7.27@sha256:1a121f2e7590f949b9ede7809395f209dd9910e331e8372e6682ba4bebcc020b
+BUSYBOX_IMAGE ?= quay.io/google-containers/busybox:1.27.2@sha256:70892b4c36448ecd9418580da9efa2644c20b4401667db6ae0cf15c0dcdaa595
+ALPINE_IMAGE ?= nginx:1-alpine
+ARTEFACTOR_IMAGE_VARS ?= MYSQL_IMAGE ALPINE_IMAGE BUSYBOX_IMAGE
+ARTEFACTOR_DOCKER_REGISTRY ?= localhost:5000
+export MYSQL_IMAGE BUSYBOX_IMAGE ALPINE_IMAGE ARTEFACTOR_IMAGE_VARS ARTEFACTOR_DOCKER_REGISTRY
+
 .PHONY: test authors changelog build release lint cover vet
 
 default: build
@@ -41,6 +48,22 @@ docker_build:
 	@echo "--> Creating a container"
 	docker build . -t ${CONTAINER}:${VERSION}
 
+run_publish_e2e_test:
+	@echo "--> running e2e test"
+	./artefactor save --logs
+	docker run -d --rm --name registry -p 5000:5000 registry:2
+	docker ps
+	env |grep -i registry
+	ARTEFACTOR_DOCKER_USERNAME=a ARTEFACTOR_DOCKER_PASSWORD=a ./artefactor publish --logs
+	docker stop registry
+	
+docker_get_artefactor_binary:
+	@echo "--> retreiveing artefactor binary"
+	docker create \
+    --name artefactor-build-${VERSION} \
+    ${CONTAINER}:${VERSION} && \
+	docker cp artefactor-build-${VERSION}:/usr/local/bin/artefactor ./artefactor
+	
 docker_push:
 	@echo "--> Pushing container"
 	docker push ${CONTAINER}:${VERSION}
@@ -60,14 +83,14 @@ release-deps:
 vet:
 	@echo "--> Running go vet $(VETARGS) ."
 	@go tool vet 2>/dev/null ; if [ $$? -eq 3 ]; then \
-		go get golang.org/x/tools/cmd/vet; \
+		GO111MODULE=off go get golang.org/x/tools/cmd/vet; \
 	fi
 	@go vet $(VETARGS) $(PACKAGES)
 
 lint:
 	@echo "--> Running golint"
 	@which golint 2>/dev/null ; if [ $$? -eq 1 ]; then \
-		go get -u golang.org/x/lint/golint; \
+		GO111MODULE=off go get -u golang.org/x/lint/golint; \
 	fi
 	@golint .
 

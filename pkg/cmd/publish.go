@@ -81,10 +81,9 @@ func publish(c *cobra.Command) error {
 		if err := docker.Load(&image); err != nil {
 			return fmt.Errorf("load image problem for %s:%s", image.FileName, err)
 		}
-		fmt.Printf("ReTagging image as %s\n", image.NewImageName+":"+image.ImageTag)
 		if err := docker.ReTag(&image); err != nil {
 			return fmt.Errorf(
-				"problem retagging %s to %s:%s",
+				"problem re-tagging %s to %s:%s",
 				image.ImageName,
 				image.NewImageName+":"+image.ImageTag, err)
 		}
@@ -96,14 +95,6 @@ func publish(c *cobra.Command) error {
 				err)
 		}
 		fmt.Printf("Pushed image %s successfully.\n", image.NewImageName+":"+image.ImageTag)
-		if image.RepoDigest != "" {
-			// validate the repodigest matches
-			err := docker.ValidatePublishedRepoDigest(image)
-			if err != nil {
-				return fmt.Errorf("There was a problem verifying the %s image's RepoDigest after it was uploaded to the registry: %s", image.NewImageName+":"+image.ImageTag, err)
-			}
-		}
-		fmt.Printf("Verified image %s repodigest %s matches published digest.\n", image.NewImageName+":"+image.ImageTag, image.RepoDigest)
 	}
 	return nil
 }
