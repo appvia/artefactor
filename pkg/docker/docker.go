@@ -59,12 +59,12 @@ func Load(image *Image) error {
 			return fmt.Errorf("error loading image: %s", apiMessage.Error.Message)
 		}
 		if image.RepoDigest != "" {
-			// if this is an image being restored from a repoDigest address, we need
+			// if this is an image being restored from a RepoDigest address, we need
 			// to supplement the image object with the imageID docker has imported it as.
-			// this gives us the basis of a tag to re-tag it with also.
+			// if no repoDigest is offered, response body does not contain the imageID
 			re := regexp.MustCompile(`sha256:([0-9a-f]{64})`)
 			image.ImageID = re.FindString(string(b))
-			log.Printf("Added %s to image object with repoDigest %s", image.ImageID, image.RepoDigest)
+			log.Printf("Added %s to image object with RepoDigest %s", image.ImageID, image.RepoDigest)
 		}
 		log.Print(string(b))
 	} else {
@@ -79,26 +79,38 @@ func ReTag(image *Image) error {
 	if err != nil {
 		return err
 	}
-	if image.RepoDigest != "" && image.ImageTag == "" {
-		image.ImageTag = image.ImageID[7:19]
-		log.Printf("Setting %s ImageTag to short sha %s from ImageID: %s as image saved by RepoDigest reference", image.NewImageName, image.ImageTag, image.ImageID)
-	}
 	imageRef := ""
 	if image.RepoDigest != "" {
-		//a sha256 repoDigest will have loaded a blank image repo name and blank tag
-		//so we must refer to the image with the ImageID
+		// a sha256 RepoDigest will have loaded a blank image repo name and blank tag
+		// so we must refer to the image with the ImageID
 		imageRef = image.ImageID
+	}
+	if image.ImageTag != "" {
+		if image.RepoDigest != "" {
+			// also tag image as RepoDigest reference with prefix
+			log.Printf("Setting %s as additional tag for image %s to reference source RepoDigest", image.RepoDigest, imageRef)
+			if err := cli.ImageTag(ctx, imageRef, image.NewImageName+":repoDigest-"+image.RepoDigest); err != nil {
+				return err
+			}
+		} else {
+			imageRef = image.ImageName + ":" + image.ImageTag
+		}
 	} else {
-		imageRef = image.ImageName + ":" + image.ImageTag
+		// implicitly the archive can only exist in the case where there is a repoDigest.
+		// just set Newtag to RepoDigest reference with prefix
+		image.ImageTag = "repoDigest-" + image.RepoDigest
+		// if we have a RepoDigest, we tag the image with a reference to the RepoDigest
+		// so that there is a reference to the registry digest of the image's source
+		log.Printf("Setting ImageTag as %s for ImageID %s as image saved only by RepoDigest reference", image.RepoDigest, image.ImageID)
 	}
 	log.Printf("Re-tagging image ref: %s => %s", imageRef, image.NewImageName+":"+image.ImageTag)
 	err = cli.ImageTag(ctx, imageRef, image.NewImageName+":"+image.ImageTag)
 	return err
 }
 
-//Check if the docker recorded repoDigest matches Image struct repoDigest
+// Check if the docker recorded RepoDigest matches Image struct RepoDigest
 func ValidatePublishedRepoDigestMatchesHashcache(image Image) (bool, error) {
-	//find recorded repoDigest
+	// find recorded RepoDigest
 	repoDigests, err := GetClientRepoDigests(image.ImageID)
 	if err != nil {
 		return false, err
@@ -120,20 +132,20 @@ func GetClientRepoDigestsByRegistry(imageID string, registry string) ([]string, 
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("Processing repoDigests for image %s", imageID)
+	log.Printf("Processing RepoDigests for image %s", imageID)
 	for _, digest := range digests {
 		if strings.HasPrefix(digest, registry+"/") {
 			newRepoDigests = append(newRepoDigests, digest)
-			log.Printf("repoDigest '%s' match for requested registry '%s'", digest, registry)
+			log.Printf("RepoDigest '%s' match for requested registry '%s'", digest, registry)
 		} else {
-			log.Printf("Discarding repoDigest '%s', does not match requested registry '%s'", digest, registry)
+			log.Printf("Discarding RepoDigest '%s', does not match requested registry '%s'", digest, registry)
 		}
 	}
 	return newRepoDigests, nil
 }
 
 func GetClientRepoDigests(imageID string) ([]string, error) {
-	//find recorded repoDigest
+	// find recorded RepoDigest
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -192,7 +204,7 @@ func GetNewImageName(image string, registry string) string {
 
 func GetImageTag(image string) string {
 	simage := strings.Split(image, "/")
-	//colons can exist in registry names
+	// colons can exist in registry names
 	if strings.Contains(simage[len(simage)-1], ":") {
 		return strings.Split(simage[len(simage)-1], ":")[1]
 	}

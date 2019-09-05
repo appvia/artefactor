@@ -139,9 +139,9 @@ export CASSANDRA_IMAGE=myreg.local/cassandra:latest
 
 #### Content Adressable Repo Digests
 
-When updating image vars and addressing images using the digest format, eg. `alpine@sha256:6a92cd1fcdc8d8cdec60f33dda4db2cb1fcdcacf3410a8e05b3741f44a9b5998` 
-the `repoDigest` cannot be guaranteed to be the same between registries due to differences in implementations of digest calculation. For this reason, when updating image vars, a local docker instance must have already published the image being updated so a new repoDigest is available and can be updated in the image var.
-for example
+When updating image vars and addressing images using the digest format, eg. `alpine@sha256:6a92cd1fcdc8d8cdec60f33dda4db2cb1fcdcacf3410a8e05b3741f44a9b5998`
+The `repoDigest` cannot be guaranteed to be the same between registries due to differences in implementations of digest calculation. For this reason, when updating image vars, a local docker instance must have already published the image being updated so a new repoDigest is available and can be updated in the image var.
+for example:
 
 ```bash
 export ALPINE_IMAGE="alpine@sha256:6a92cd1fcdc8d8cdec60f33dda4db2cb1fcdcacf3410a8e05b3741f44a9b5998"
@@ -160,7 +160,10 @@ export MYSQL_IMAGE=myreg.local/alpine@sha256:b7b28af77ffec6054d13378df4fdf027258
 
 As can be seen the digest sha has changed. This was picked up from the metadata stored in the local docker instance gathered from the push even `artefactor publish` generates.
 
-**Note**: if the image has not been published from the context the `artefactor update-image-vars` command is being run from, the command will fail with an error not being able to find the image details in the local docker instance.
+**Notes**:
+
+- if the image has not been published from the context the `artefactor update-image-vars` command is being run from, the command will fail with an error not being able to find the image details in the local docker instance.
+- Image stored with the format `imagename:vX.Y.Z@sha256:[64chars]` will be loaded with only an image name and no tag, and then tagged twice when pushed to the destination registry, both with the original tag AND a second reference to the repoDigest it was pulled from at the source registry. This is a convenience to provide a reverse reference for the source of the image since there is no direct reference possible between separate registries.
 
 ### Usage in CI
 

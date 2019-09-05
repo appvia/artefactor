@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -59,22 +60,28 @@ func imageNames(c *cobra.Command) error {
 	for _, imageVar := range imageVars {
 		image := os.Getenv(imageVar)
 		//if the image has a sha, we need to check for a local sha
+		log.Printf("Updating imagevar %s: %s", imageVar, image)
 		newImageName := docker.GetNewImageName(image, registry)
 		imageOrigSha := docker.GetRepoDigest(newImageName)
 		if imageOrigSha != "" {
+			newBareImageName := docker.StripRepoDigest(newImageName)
+			if docker.GetImageTag(newBareImageName) == "" {
+				newBareImageName = newBareImageName + ":repoDigest-" + imageOrigSha
+			}
+
 			//we have a sha, find new local sha
-			repoDigests, err := docker.GetClientRepoDigestsByRegistry(docker.StripRepoDigest(newImageName), registry)
+			repoDigests, err := docker.GetClientRepoDigestsByRegistry(newBareImageName, registry)
 			if err != nil {
 				if docker.IsClientErrNotFound(err) {
 					fmt.Println(err.Error())
-					return fmt.Errorf("Docker could not find metadata for the image '%s', possibly the image has not been published yet. Please try running an `artefactor publish` on the image before rerunning this command", docker.StripRepoDigest(newImageName))
+					return fmt.Errorf("Docker could not find metadata for the image '%s', possibly the image has not been published yet. Please try running an `artefactor publish` for the image before re-running this command", newBareImageName)
 				}
 				return err
 			}
 			if len(repoDigests) < 1 {
 				return fmt.Errorf("No repoDigests stored for target registry. Please re run artefactor publish to upload and generate a repoDigest for this image in the target environment")
 			} else if len(repoDigests) > 1 {
-				// multiple version of image may cause this?
+				// multiple version of image may cause this? defensive code: Not sure if this will ever happen
 				return fmt.Errorf("Ambiguous repoDigests for image: %s, found multiple repo Digests attached to docker image:  %#v, Require unambiguous number of repoDigests for the image", image, repoDigests)
 			}
 			newImageName = docker.StripRepoDigest(newImageName) + docker.ShaIdent + docker.GetRepoDigest(repoDigests[0])
