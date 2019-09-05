@@ -25,12 +25,11 @@ jobs:
       image: ubuntu-1604:201903-01
     environment:
       GO111MODULE: "on"
-      ARTEFACTOR_BINARY: "artefactor"
     steps:
       - checkout
       - run: make docker_build
       - run: make docker_get_artefactor_binary
-      - run: make run_publish_e2e_test
+      - run: make run_e2e_test
 
   release:
     docker:
