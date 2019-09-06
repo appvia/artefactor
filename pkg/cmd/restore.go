@@ -251,14 +251,14 @@ func RestoreHome(gitRepoFile string, dst string, savedDir string) error {
 // calcAndCheckSum will display the results of verifying a checksum
 func calcAndCheckSum(file string, csc *hashcache.CheckSumCache) error {
 	file = filepath.Clean(file)
-	fmt.Printf("  Checksum:")
+	fmt.Print("  Checksum:")
 	calcHash, err := hashcache.CalcChecksum(file)
 	if err != nil {
 		return err
 	}
 	log.Print(calcHash)
 	if csc.IsCachedMatched(file, calcHash) {
-		fmt.Printf("OK\n")
+		fmt.Print("OK\n")
 	} else {
 		expectedHash, ok := csc.CheckSumsByFilePath[file]
 		if !ok {

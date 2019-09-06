@@ -6,33 +6,31 @@ function finish {
   #rm -rf $TMPDIR
 }
 trap finish EXIT
-: "${E2E_BREAK_TESTS:=0}"
+
 : "${ARTEFACTOR_IMAGE_VARS?}" "${ARTEFACTOR_DOCKER_REGISTRY?}" "${ARTEFACTOR_GIT_REPOS?}"
 set -xe
+TMPSRC=$(mktemp -d)
+./bin/artefactor save --archive-dir "$TMPSRC" --logs
 
-./bin/artefactor save --logs
-
-cd downloads
-
-if E2E_BREAK_TESTS; then
-# uncomment to break e2e test with validate src files are checksumed.
-#get all docker.tar files 
-files=(`ls *.docker.tar`)
-#truncate first file in list.
-cat /dev/null > "${files[0]}"
+cd "$TMPSRC"
+if [ ! -z "$E2E_BREAK_TESTS" ]; then
+    #get all docker.tar files 
+    files=(`ls *.docker.tar`)
+    #truncate first file in list.
+    cat /dev/null > "${files[0]}"
 fi
 
-TMPDIR=$(mktemp -d)
-./artefactor restore --dest-dir $TMPDIR --logs 
+TMPDST=$(mktemp -d)
+./artefactor restore --dest-dir "$TMPDST" --logs 
 
-cd "${TMPDIR}/artefactor"
+cd "${TMPDST}/artefactor"
 docker run -d --rm --name registry -p 5000:5000 registry:2
 docker ps
 env |grep -i registry
-
-ARTEFACTOR_DOCKER_USERNAME=a ARTEFACTOR_DODCKER_PASSWORD=a ./downloads/artefactor publish --logs
+ARTEFACTOR_ARCHIVE_DIR="${TMPDST}/artefactor${TMPSRC}"
+ARTEFACTOR_DOCKER_USERNAME=a ARTEFACTOR_DODCKER_PASSWORD=a ./"${TMPSRC}"/artefactor publish --archive-dir "${ARTEFACTOR_ARCHIVE_DIR}" --logs
 
 docker stop registry
-echo "env:" ${ARTEFACTOR_IMAGE_VARS}
+echo "env:" "${ARTEFACTOR_IMAGE_VARS}"
 env |grep IMAGE
-./downloads/artefactor update-image-vars --logs
+./"${TMPSRC}/artefactor" update-image-vars --archive-dir "${ARTEFACTOR_ARCHIVE_DIR}" --logs
