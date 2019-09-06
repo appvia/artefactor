@@ -17,8 +17,9 @@ LFLAGS ?= -X ${VERSION_PKG}.gitVersion=${GIT_VERSION} -X ${VERSION_PKG}.gitSha=$
 VETARGS ?= -asmdecl -atomic -bool -buildtags -copylocks -methods -nilfunc -printf -rangeloops -unsafeptr
 PLATFORMS ?= darwin linux
 ARCHITECTURES ?= 386 amd64
+E2E_BREAK_TESTS ?=
 
-ARTEFACTOR_BINARY ?= bin/artefactor
+# E2E test values
 MYSQL_IMAGE ?= mysql:5.7.27@sha256:1a121f2e7590f949b9ede7809395f209dd9910e331e8372e6682ba4bebcc020b
 BUSYBOX_IMAGE ?= quay.io/google-containers/busybox:1.27.2@sha256:70892b4c36448ecd9418580da9efa2644c20b4401667db6ae0cf15c0dcdaa595
 BUSYBOX2_IMAGE ?= busybox@sha256:442c9d8c2c01192d7f7a05a1b02ba0f4509d9bd28d4d40d67e8f7800740f1483
@@ -26,7 +27,10 @@ BUSYBOX3_IMAGE ?= busybox@sha256:2edbab3ccf5ebe2d1c79131966766ff2156df89ed538e0c
 ALPINE_IMAGE ?= nginx:1-alpine
 ARTEFACTOR_IMAGE_VARS ?= MYSQL_IMAGE ALPINE_IMAGE BUSYBOX_IMAGE BUSYBOX2_IMAGE BUSYBOX3_IMAGE
 ARTEFACTOR_DOCKER_REGISTRY ?= localhost:5000
-export MYSQL_IMAGE BUSYBOX_IMAGE BUSYBOX2_IMAGE BUSYBOX3_IMAGE ALPINE_IMAGE ARTEFACTOR_IMAGE_VARS ARTEFACTOR_DOCKER_REGISTRY
+
+ARTEFACTOR_GIT_REPOS ?= .
+
+export MYSQL_IMAGE BUSYBOX_IMAGE BUSYBOX2_IMAGE BUSYBOX3_IMAGE ALPINE_IMAGE ARTEFACTOR_IMAGE_VARS ARTEFACTOR_DOCKER_REGISTRY ARTEFACTOR_GIT_REPOS 
 
 .PHONY: test authors changelog build release lint cover vet
 
@@ -51,31 +55,24 @@ docker_build:
 	@echo "--> Creating a container"
 	docker build . -t ${CONTAINER}:${VERSION}
 
-run_publish_e2e_test:
+run_e2e_test:
 	@echo "--> running e2e test"
-	./${ARTEFACTOR_BINARY} save --logs
-	docker run -d --rm --name registry -p 5000:5000 registry:2
-	docker ps
-	env |grep -i registry
-	ARTEFACTOR_DOCKER_USERNAME=a ARTEFACTOR_DOCKER_PASSWORD=a ./${ARTEFACTOR_BINARY} publish --logs
-	docker stop registry
-	@echo "env:" ${ARTEFACTOR_IMAGE_VARS}
-	@env |grep IMAGE
-	./${ARTEFACTOR_BINARY} update-image-vars --logs
+	ci_tests/e2etest.sh
 	
 
 run_updateimagevars_test:
 	@echo "--> running update-image-vars test"
 	@echo "env:" ${ARTEFACTOR_IMAGE_VARS}
 	@env |grep IMAGE
-	./${ARTEFACTOR_BINARY} update-image-vars
+	./bin/artefactor update-image-vars
 
 docker_get_artefactor_binary:
 	@echo "--> retreiveing artefactor binary"
+	mkdir -p bin
 	docker create \
     --name artefactor-build-${VERSION} \
     ${CONTAINER}:${VERSION} && \
-	docker cp artefactor-build-${VERSION}:/usr/local/bin/artefactor ${ARTEFACTOR_BINARY}
+	docker cp artefactor-build-${VERSION}:/usr/local/bin/artefactor bin/artefactor
 	
 docker_push:
 	@echo "--> Pushing container"

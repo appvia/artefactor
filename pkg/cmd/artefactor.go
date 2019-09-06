@@ -17,7 +17,7 @@ const (
 	FlagDockerImages = "docker-images"
 	// FlagArchiveDir is the directory to save archives into
 	FlagArchiveDir = "archive-dir"
-	// FlagGitRepos specifies a newline speerated list of local or remote git repos
+	// FlagGitRepos specifies a newline seperated list of local or remote git repos
 	FlagGitRepos = "git-repos"
 	// FlagWebFiles specifies a whitespace delimited set of csv's with:
 	// url,file,md5,[true|false (executable)]
