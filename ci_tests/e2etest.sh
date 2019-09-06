@@ -3,7 +3,7 @@ function finish {
   # Your cleanup code here
   #ensure docke registry is stopped
   docker stop registry &>/dev/null || true
-  rm -rf $TMPDIR
+  #rm -rf $TMPDIR
 }
 trap finish EXIT
 : "${E2E_BREAK_TESTS:=0}"
