@@ -211,12 +211,12 @@ func RestoreHome(gitRepoFile string, dst string, savedDir string) error {
 	}
 	dstChkFile := filepath.Join(dstDir, hashcache.DefaultCheckSumFileName)
 
-	// Next move the checksums file...
-	if err := util.Mv(
+	// Next copy the checksums file...
+	if err := util.Cp(
 		srcChk.CheckSumFile,
 		dstChkFile); err != nil {
 		return fmt.Errorf(
-			"cannot move checksum file (%s) from:%s to %s:%s",
+			"cannot copy checksum file (%s) from:%s to %s:%s",
 			srcChk.CheckSumFile,
 			src,
 			dstDir,
