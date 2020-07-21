@@ -162,8 +162,9 @@ As can be seen the digest sha has changed. This was picked up from the metadata 
 
 **Notes**:
 
-- if the image has not been published from the context the `artefactor update-image-vars` command is being run from, the command will fail with an error not being able to find the image details in the local docker instance.
-- Image stored with the format `imagename:vX.Y.Z@sha256:[64chars]` will be loaded with only an image name and no tag, and then tagged twice when pushed to the destination registry, both with the original tag AND a second reference to the repoDigest it was pulled from at the source registry. This is a convenience to provide a reverse reference for the source of the image since there is no direct reference possible between separate registries.
+- If the image has not been published from the context the `artefactor update-image-vars` command is being run from, the command will fail with an error not being able to find the image details in the local docker instance.
+- Images stored with the format `imagename:vX.Y.Z@sha256:[64chars]` will be loaded with only an image name and no tag, and then tagged twice when pushed to the destination registry, both with the original tag AND a second reference to the repoDigest it was pulled from at the source registry. This is a convenience to provide a reverse reference for the source of the image since there is no direct reference possible between separate registries. Since it is only a tag, however, it does not cryptographically guarantee the content f the image.
+- Passing the flag `--dry-run` to `artefactor update-image-vars` will cause it to return a set of image names based on the information that it does have, without needing cached copies of the images in question. In the case of images in the format described above, this will return the repoDigest tag referencing the original SHA (as the new SHA is not known).
 
 ### Usage in CI
 

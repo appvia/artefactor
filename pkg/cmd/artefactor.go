@@ -30,6 +30,9 @@ const (
 	// FlagImageVars is used to specify a whitelist of variable names to enable
 	// "export"
 	FlagImageVars = "image-vars"
+    // FlagImageNameDryRun is used to output the image names that would be
+    // generated during `artefactor publish`
+    FlagImageNameDryRun = "dry-run"
 	// FlagDockerUserName overrides docker registry configuration
 	FlagDockerUserName = "docker-username"
 	// FlagDockerPassword overrides docker registry configuration

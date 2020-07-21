@@ -44,6 +44,12 @@ func init() {
 		"",
 		"where images have been published e.g. private-registry.local")
 
+	imageNamesCmd.PersistentFlags().Bool(
+		FlagImageNameDryRun,
+		false,
+        "output a list of the image names and tags that would be generated if a save/publish were to be performed",
+	)
+
 	RootCmd.AddCommand(imageNamesCmd)
 }
 
@@ -57,6 +63,11 @@ func imageNames(c *cobra.Command) error {
 	}
 	imageVars := strings.Fields(c.Flag(FlagImageVars).Value.String())
 
+    dryRun, err := c.Flags().GetBool(FlagImageNameDryRun)
+    if err != nil {
+        return fmt.Errorf("Error getting flag %s, expected a boolean", FlagImageNameDryRun)
+    }
+
 	for _, imageVar := range imageVars {
 		image := os.Getenv(imageVar)
 		//if the image has a sha, we need to check for a local sha
@@ -69,22 +80,27 @@ func imageNames(c *cobra.Command) error {
 				newBareImageName = newBareImageName + ":repoDigest-" + imageOrigSha
 			}
 
-			//we have a sha, find new local sha
-			repoDigests, err := docker.GetClientRepoDigestsByRegistry(newBareImageName, registry)
-			if err != nil {
-				if docker.IsClientErrNotFound(err) {
-					fmt.Println(err.Error())
-					return fmt.Errorf("Docker could not find metadata for the image '%s', possibly the image has not been published yet. Please try running an `artefactor publish` for the image before re-running this command", newBareImageName)
-				}
-				return err
-			}
-			if len(repoDigests) < 1 {
-				return fmt.Errorf("No repoDigests stored for target registry. Please re run artefactor publish to upload and generate a repoDigest for this image in the target environment")
-			} else if len(repoDigests) > 1 {
-				// multiple version of image may cause this? defensive code: Not sure if this will ever happen
-				return fmt.Errorf("Ambiguous repoDigests for image: %s, found multiple repo Digests attached to docker image:  %#v, Require unambiguous number of repoDigests for the image", image, repoDigests)
-			}
-			newImageName = docker.StripRepoDigest(newImageName) + docker.ShaIdent + docker.GetRepoDigest(repoDigests[0])
+            if dryRun {
+                // do not look at local images, just output the generated name
+                newImageName = newBareImageName
+            } else {
+			    // we have local images and a sha, find new local sha
+			    repoDigests, err := docker.GetClientRepoDigestsByRegistry(newBareImageName, registry)
+			    if err != nil {
+				    if docker.IsClientErrNotFound(err) {
+					    fmt.Println(err.Error())
+					    return fmt.Errorf("Docker could not find metadata for the image '%s', possibly the image has not been published yet. Please try running an `artefactor publish` for the image before re-running this command", newBareImageName)
+				    }
+				    return err
+			    }
+			    if len(repoDigests) < 1 {
+				    return fmt.Errorf("No repoDigests stored for target registry. Please re run artefactor publish to upload and generate a repoDigest for this image in the target environment")
+			    } else if len(repoDigests) > 1 {
+				    // multiple version of image may cause this? defensive code: Not sure if this will ever happen
+				    return fmt.Errorf("Ambiguous repoDigests for image: %s, found multiple repo Digests attached to docker image:  %#v, Require unambiguous number of repoDigests for the image", image, repoDigests)
+			    }
+			    newImageName = docker.StripRepoDigest(newImageName) + docker.ShaIdent + docker.GetRepoDigest(repoDigests[0])
+            }
 		}
 
 		fmt.Printf("export %s=%s\n", imageVar, newImageName)
