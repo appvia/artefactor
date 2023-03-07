@@ -9,7 +9,7 @@ require (
 	github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239 // indirect
 	github.com/cavaliercoder/grab v2.0.0+incompatible
 	github.com/containerd/containerd v1.2.7 // indirect
-	github.com/docker/distribution v2.7.1+incompatible // indirect
+	github.com/docker/distribution v2.8.0+incompatible // indirect
 	github.com/docker/docker v0.7.3-0.20190805100320-e0b10ddcf688
 	github.com/docker/docker-credential-helpers v0.6.1
 	github.com/docker/go-connections v0.3.0 // indirect
